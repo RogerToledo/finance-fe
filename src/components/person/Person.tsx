@@ -1,5 +1,4 @@
 import { useState } from "react";
-import NavBar from "./NavBar";
 import ModalPerson from "./ModalPerson";
 
 function Person() {
@@ -9,7 +8,6 @@ function Person() {
     const closeModal = () => setIsModalOpen(false);
     return (
         <div>
-            <NavBar />
             <div className="flex items-center mt-5">
                 <button 
                     type="button" 
