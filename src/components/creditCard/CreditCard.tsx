@@ -137,7 +137,7 @@ function CreditCard() {
                                 <td className="px-6 py-4">
                                     {message.invoice_closing_day}
                                 </td>
-                                <td className="px-6 py-4 text-right">
+                                <td className="px-6 py-2 text-right">
                                     <button 
                                         type="button"
                                         onClick={ () => {

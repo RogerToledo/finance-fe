@@ -114,7 +114,7 @@ function PaymentType() {
                                 <td className="px-6 py-4">
                                     {message.name}
                                 </td>
-                                <td className="px-6 py-4 text-right">
+                                <td className="px-6 py-2 text-right">
                                     <button 
                                         type="button"
                                         onClick={ () => {

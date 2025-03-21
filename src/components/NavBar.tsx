@@ -54,16 +54,36 @@ function NavBar() {
                                 >
                                     <ul className="py-2 text-sm text-gray-700 dark:text-gray-400" aria-labelledby="dropdownLargeButton">
                                         <li>
-                                            <Link href="/person" className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Pessoa</Link>
+                                            <Link 
+                                                href="/person" 
+                                                onClick={toggleRegistration}
+                                                className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
+                                                    Pessoa
+                                            </Link>
                                         </li>
                                         <li>
-                                            <Link href="/creditCard" className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Cartão de Crédito</Link>
+                                            <Link 
+                                                href="/creditCard" 
+                                                onClick={toggleRegistration}
+                                                className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
+                                                    Cartão de Crédito
+                                                </Link>
                                         </li>
                                         <li>
-                                            <Link href="/purchaseType" className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Tipo de Compra</Link>
+                                            <Link 
+                                                href="/purchaseType" 
+                                                onClick={toggleRegistration}
+                                                className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
+                                                    Tipo de Compra
+                                            </Link>
                                         </li>
                                         <li>
-                                            <Link href="/paymentType" className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Tipo de Pagamento</Link>
+                                            <Link 
+                                                href="/paymentType" 
+                                                onClick={toggleRegistration}
+                                                className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
+                                                    Tipo de Pagamento
+                                            </Link>
                                         </li>
                                     </ul>
                                 </div>

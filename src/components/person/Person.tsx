@@ -29,6 +29,7 @@ function Person() {
 
         try {
             const data = await getPersons();
+            console.log(data);
             setPersons(data);
         } catch (err) {
             if (err instanceof Error) {

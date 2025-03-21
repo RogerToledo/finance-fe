@@ -14,7 +14,7 @@ const ModalPaymentType: React.FC<ModalProps> = ({ isOpen, onClose, onPaymentType
     const [paymentTypeName, setPaymentTypeName] = useState('');
     const [title, setTitle] = useState("Cadastro do Tipo de Pagamento");
     const [buttonText, setButtonText] = useState("Adicionar novo tipo de pagamento");
-  
+
     useEffect(() => {
         if (isUpdate && paymentTypeId) {
             setTitle("Atualização do Tipo de Pagamento");
@@ -37,25 +37,25 @@ const ModalPaymentType: React.FC<ModalProps> = ({ isOpen, onClose, onPaymentType
     }, [isUpdate, paymentTypeId]);
 
     const handleSubmit = async (e: React.FormEvent) => {
-            e.preventDefault();
-    
-            try {
-                if (isUpdate) {
-                    console.log("Updating person", paymentTypeId, paymentTypeName);
-                    await updatePaymentType(paymentTypeId, paymentTypeName);
-                } else {
-                    await createPaymentType(paymentTypeName);
-                }
-    
-                onPaymentTypeAction();
-            } catch (err) {
-                console.error("Error creating person", err);
+        e.preventDefault();
+
+        try {
+            if (isUpdate) {
+                console.log("Updating payment type", paymentTypeId, paymentTypeName);
+                await updatePaymentType(paymentTypeId, paymentTypeName);
+            } else {
+                await createPaymentType(paymentTypeName);
             }
+
+            onPaymentTypeAction();
+        } catch (err) {
+            console.error("Error creating payment type", err);
         }
-    
-        const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-            setPaymentTypeName(e.target.value);
-        };
+    }
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setPaymentTypeName(e.target.value);
+    };
 
     if (!isOpen) {
         return null;

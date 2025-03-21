@@ -1,5 +1,15 @@
 import instance from "./config";
 
+interface MessageItem {
+    id: string;
+    name: string;
+}
+
+interface PersonData {
+    Message: MessageItem[];
+    StatusCode: number;
+}
+
 export const createPerson = async (name: string) => {
     await instance.post('/person', {
         name: name,
