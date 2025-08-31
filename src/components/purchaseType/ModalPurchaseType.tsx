@@ -82,7 +82,7 @@ const ModalPurchaseType: React.FC<ModalProps> = ({ isOpen, onClose, onPurchaseTy
                     </div>
                     {/*  Modal body */}
                     <div className="p-4 md:p-5">
-                        <form onSubmit={handleSubmit} className="space-y-4" action="#">
+                        <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
                                 <label htmlFor="purchaseTypeName" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nome</label>
                                 <input 

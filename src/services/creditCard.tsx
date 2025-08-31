@@ -2,15 +2,15 @@ import instance from "./config";
 
 export const createCreditCard = async (
     owner: string, 
-    finalCardNum: string, 
+    final_card_num: string, 
     type: string, 
-    invoiceClosingDay: number
+    invoice_closing_day: number
 ) => {
     await instance.post('/creditCard', {
         owner: owner,
-        final_card_num: finalCardNum,
+        final_card_num: final_card_num,
         type: type,
-        invoice_closing_day: invoiceClosingDay
+        invoice_closing_day: invoice_closing_day
     }).then((response) => {
         console.log(response);
     }).catch((error) => {
@@ -21,16 +21,16 @@ export const createCreditCard = async (
 export const updateCreditCard = async (
     id: string,
     owner: string, 
-    finalCardNum: string, 
+    final_card_num: string, 
     type: string, 
-    invoiceClosingDay: number
+    invoice_closing_day: number
 ) => {
     await instance.put(`/creditCard`, {
         id: id,
         owner: owner,
-        final_card_num: finalCardNum,
+        final_card_num: final_card_num,
         type: type,
-        invoice_closing_day: invoiceClosingDay
+        invoice_closing_day: invoice_closing_day
     }).then((response) => {
         if (response.status === 200 || response.status === 204) {
             console.log("Credit card updated successfully");
@@ -72,6 +72,7 @@ export const getCreditCard = async (id: string) => {
 
 export const getCreditCards = async () => {
     const response = await instance.get<[{
+        ID: string,
         Owner: string,
         FinalCardNum: string,
         Type: string,
