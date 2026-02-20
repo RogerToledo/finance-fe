@@ -1,76 +1,45 @@
 import instance from "./config";
 
-interface MessageItem {
+export interface Person {
     id: string;
     name: string;
 }
 
-interface PersonData {
-    Message: MessageItem[];
-    StatusCode: number;
+export interface PersonResponse {
+    message: Person[];
+    statusCode: number;
 }
 
 export const createPerson = async (name: string) => {
-    await instance.post('/person', {
+    const response = await instance.post('/v1/person', {
         name: name,
-    }).then((response) => {
-        console.log(response);
-    }).catch((error) => {
-        console.log(error);
-    });
-}
-
-export const updatePerson = async (id: string, name: string) => {
-    await instance.put(`/person`, {
-        id: id,
-        name: name,
-    }).then((response) => {
-        if (response.status === 200 || response.status === 204) {
-            console.log("Person updated successfully");
-            getPersons();
-        }
-    }).catch((error) => {
-        console.log(error);
-    });
-}
-
-export const deletePerson = async (id: string) => {
-    await instance.delete(`/person/${id}`).then((response) => {
-        if (response.status === 200 || response.status === 204) {
-            console.log("Person deleted successfully");
-            getPersons();
-        }
-        console.log(response);
-    }).catch((error) => {
-        console.log(error);
-    });
-}
-
-export const getPerson = async (id: string) => {
-    const response = await instance.get<{
-        id: string,
-        name: string,
-    }>(`/person/${id}`).catch((error) => {
-        console.error("Failed to fetch person:", error.message);
-        if (error.config) {
-            console.error("Request was made to:", error.config.baseURL + error.config.url);
-        }
-        return {} as any;
     });
 
     return response.data;
 }
 
-export const getPersons = async () => {
-    const response = await instance.get<[{
-        id: string,
-        name: string,
-    }]>('/persons').catch((error) => {
-        console.error("Failed to fetch persons:", error.message);
-        if (error.config) {
-            console.error("Request was made to:", error.config.baseURL + error.config.url);
-        }
-        return [] as any;
+export const updatePerson = async (id: string, name: string) => {
+    const response = await instance.put(`/v1/person`, {
+        id: id,
+        name: name,
     });
+
+    return response.data;
+}
+
+export const deletePerson = async (id: string) => {
+    const response = await instance.delete(`/v1/person/${id}`);
+
+    return response.data;
+}
+
+export const getPerson = async (id: string) => {
+    const response = await instance.get<Person>(`/v1/person/${id}`);
+
+    return response.data;
+}
+
+export const getPersons = async () => {
+    const response = await instance.get<PersonResponse>('/v1/persons');
     return response.data;
 }

@@ -1,8 +1,8 @@
-import { UUID } from "crypto";
 import instance from "./config";
 
+type UUID = string;
+
 export const createPurchase = async (
-    id: UUID,
     description: string,
     amount: number,
     date: string,
@@ -14,8 +14,7 @@ export const createPurchase = async (
     id_purchase_type: string,
     id_person: string
 ) => {
-    await instance.post('/purchase', {
-        id: id,
+    const response = await instance.post('/v1/purchase', {
         description: description,
         amount: amount,
         date: date,
@@ -26,11 +25,9 @@ export const createPurchase = async (
         id_credit_card: id_credit_card,
         id_purchase_type: id_purchase_type,
         id_person: id_person
-    }).then((response) => {
-        console.log(response);
-    }).catch((error) => {
-        console.log(error);
     });
+
+    return response.data;
 }
 
 export const updatePurchase = async (
@@ -46,7 +43,7 @@ export const updatePurchase = async (
     id_purchase_type: string,
     id_person: string
 ) => {
-    await instance.put(`/purchase`, {
+    const response = await instance.put(`/v1/purchase`, {
         id: id,
         description: description,
         amount: amount,
@@ -58,26 +55,15 @@ export const updatePurchase = async (
         credit_card: id_credit_card,
         id_credit_card: id_purchase_type,
         id_person: id_person
-    }).then((response) => {
-        if (response.status === 200 || response.status === 204) {
-            console.log("Purchase updated successfully");
-            getPurchases();
-        }
-    }).catch((error) => {
-        console.log(error);
     });
+
+    return response.data;
 }
 
 export const deletePurchase = async (id: UUID) => {
-    await instance.delete(`/purchase/${id}`).then((response) => {
-        if (response.status === 200 || response.status === 204) {
-            console.log("Purchase deleted successfully");
-            getPurchases();
-        }
-        console.log(response);
-    }).catch((error) => {
-        console.log(error);
-    });
+    const response = await instance.delete(`/v1/purchase/${id}`);
+
+    return response.data;
 }
 
 export const getPurchase = async (id: UUID) => {
@@ -94,38 +80,16 @@ export const getPurchase = async (id: UUID) => {
         credit_card: string,
         purchase_type: string,
         person: string
-    }>(`/purchase/${id}`).catch((error) => {
-        console.error("Failed to fetch purchase:", error.message);
-        if (error.config) {
-            console.error("Request was made to:", error.config.baseURL + error.config.url);
-        }
-        return {} as any;
-    });
+    }>(`/v1/purchase/${id}`);
 
     return response.data;
 }
 
 export const getPurchases = async () => {
-    const response = await instance.get<[{
-        id: UUID,
-        description: string,
-        amount: number,
-        date: string,
-        installment_number: number,
-        installment: number,
-        place: string,
-        paid: boolean,
-        payment_type: string,
-        credit_card: string,
-        purchase_type: string,
-        person: string
-    }]>('/purchases').catch((error) => {
-        console.error("Failed to fetch purchase:", error.message);
-        if (error.config) {
-            console.error("Request was made to:", error.config.baseURL + error.config.url);
-        }
-        return [] as any;
-    });
-    console.log("response", response.data);
-    return response.data;
+    const response = await instance.get<[]>('/v1/purchases')
+    
+    return {
+        message: response.data,
+        statusCode: response.status,
+    }    
 }

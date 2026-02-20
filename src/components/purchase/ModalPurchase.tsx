@@ -4,14 +4,15 @@ import { getCreditCards } from '@/services/creditCard';
 import { getPersons } from '@/services/person';
 import { getPaymentTypes } from '@/services/paymentType';
 import { getPurchaseTypes } from '@/services/purchaseType';
-import { UUID } from 'crypto';
+
+type UUID = string;
 
 interface ModalProps {
     isOpen: boolean;
     onClose: () => void;
     onPurchaseAction: () => void;
     isUpdate: boolean;
-    purchaseId: UUID;
+    purchaseId: UUID | null;
 }
 
 interface Person {
@@ -27,7 +28,7 @@ interface PaymentType {
 interface Card {
     id: string;
     owner: string;
-    finalCardNumber: string;
+    final_card_num: string;
 }
 
 interface PurchaseType {
@@ -35,216 +36,129 @@ interface PurchaseType {
     name: string;
 }
 
+const initialFormState = {
+    description: '',
+    amount: '',
+    date: '',
+    installment_number: 0,
+    place: '',
+    paid: false,
+    payment_type: '',
+    credit_card: '',
+    purchase_type: '',
+    person: '',
+}
+
 const ModalPurchaseType: React.FC<ModalProps> = ({ isOpen, onClose, onPurchaseAction, isUpdate, purchaseId }) => {
-    const [purchaseDescription, setPurchaseDescription] = useState('');
-    const [purchaseAmount, setPurchaseAmount] = useState('');
-    const [purchaseDate, setPurchaseDate] = useState('');
-    const [purchaseInstallmentNumber, setPurchaseInstallmentNumber] = useState(0);
-    const [purchasePlace, setPurchasePlace] = useState('');
-    const [purchasePaid, setPurchasePaid] = useState(false);
-    const [purchasePaymentType, setPurchasePaymentType] = useState('');
-    const [purchaseCreditCard, setPurchaseCreditCard] = useState('');
-    const [purchaseType, setPurchaseType] = useState('');
-    const [purchasePerson, setPurchasePerson] = useState('');
+    const [formData, setFormData] = useState(initialFormState);
     const [persons, setPersons] = useState<Person[]>([]);
     const [paymentTypes, setPaymentType] = useState<PaymentType[]>([]);
     const [types, setTypes] = useState<PurchaseType[]>([]);
     const [cards, setCards] = useState<Card[]>([]);
-    const [title, setTitle] = useState("Cadastro de Compra");
-    const [buttonText, setButtonText] = useState("Adicionar nova compra");
+    const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
+        if (!isOpen) return;
+
         if (isUpdate && purchaseId) {
-            setTitle("Atualização de Compra");
-            setButtonText("Atualizar Compra");
             const fetchPurchaseType = async () => {
                 try {
                     const response = await getPurchase(purchaseId);
-                    setPurchaseDescription(response.Message.description);
-                    setPurchaseAmount(response.Message.amount);
-                    setPurchaseDate(response.Message.date);
-                    setPurchaseInstallmentNumber(response.Message.installment_number);
-                    setPurchasePlace(response.Message.place);
-                    setPurchasePaid(response.Message.paid);
-                    setPurchasePaymentType(response.Message.payment_type);
-                    setPurchaseCreditCard(response.Message.credit_card);
-                    setPurchaseType(response.Message.purchase_type);
-                    setPurchasePerson(response.Message.person);
+                    const data = response;
+                    setFormData({
+                        description: data.description || '',
+                        amount: data.amount.toString(),
+                        date: data.date || '',
+                        installment_number: data.installment_number || 0,
+                        place: data.place || '',
+                        paid: data.paid || false,
+                        payment_type: data.payment_type || '',
+                        credit_card: data.credit_card || '',
+                        purchase_type: data.purchase_type || '',
+                        person: data.person || ''
+                    });
+
                 } catch (error) {
                     console.error("Error fetching purchase", error);
                 }
             };
             fetchPurchaseType();
         } else {
-            setTitle("Cadastro de Compra");
-            setButtonText("Adicionar nova compra");
-            setPurchaseDescription("");
-            setPurchaseAmount("");
-            setPurchaseDate("");
-            setPurchaseInstallmentNumber(0);
-            setPurchasePlace("");
-            setPurchasePaid(false);
-            setPurchasePaymentType("");
-            setPurchaseCreditCard("");
-            setPurchaseType("");
-            setPurchasePerson("");
+           setFormData(initialFormState);
         }
-    }, [isUpdate, purchaseId]);
+    }, [isOpen, isUpdate, purchaseId]);
 
-    const fetchPerson = useCallback(async () => {
+    const fetchMetadata = useCallback(async () => {
         try {
-            const response = await getPersons();
-            if (response && Array.isArray(response.Message)) {
-                const personData = response.Message.map((person: any) => ({
-                    id: person.id,
-                    name: person.name,
-                }));
-                setPersons(personData);
-            }
+            const [personsData, paymentTypesData, cardsData, purchaseTypesData] = await Promise.all([
+                getPersons(),
+                getPaymentTypes(),
+                getCreditCards(),
+                getPurchaseTypes()
+            ]);
+            setPersons(personsData.message || []);
+            setPaymentType(paymentTypesData.message || []);
+            setCards(cardsData.message || []);
+            setTypes(purchaseTypesData.message || []);
         } catch (error) {
-            console.error("Error fetching person", error);
-        }
-    }, []);
-
-    const fetchPaymentType = useCallback(async () => {
-        try {
-            const response = await getPaymentTypes();
-            if (response && Array.isArray(response.Message)) {
-                const paymentTypeData = response.Message.map((paymentType: any) => ({
-                    id: paymentType.id,
-                    name: paymentType.name,
-                }));
-                setPaymentType(paymentTypeData);
-            }
-        } catch (error) {
-            console.error("Error fetching payment type", error);
-        }
-    }, []);
-
-    const fetchCreditCard = useCallback(async () => {
-        try {
-            const response = await getCreditCards();
-            if (response && Array.isArray(response.Message)) {
-                const cardsData = response.Message.map((card: any) => ({
-                    id: card.id,
-                    owner: card.owner,
-                    finalCardNumber: card.final_card_num,
-                }));
-                setCards(cardsData);
-            }
-        } catch (error) {
-            console.error("Error fetching credit card", error);
-        }
-    }, []);
-
-    const fetchPurchaseType = useCallback(async () => {
-        try {
-            const response = await getPurchaseTypes();
-            if (response && Array.isArray(response.Message)) {
-                const purchaseTypeData = response.Message.map((purchaseType: any) => ({
-                    id: purchaseType.id,
-                    name: purchaseType.name,
-                }));
-                setTypes(purchaseTypeData);
-            }
-        } catch (error) {
-            console.error("Error fetching purchase type", error);
+            console.error("Error fetching metadata", error);
         }
     }, []);
 
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                await fetchPerson();
-                await fetchPaymentType();
-                await fetchCreditCard();
-                await fetchPurchaseType();
-            } catch (error) {
-                console.error("Error fetching data", error);
-            }
-        };
-        fetchData();
-    }, [fetchCreditCard, fetchPaymentType, fetchPerson, fetchPurchaseType]);
+        if (isOpen) { fetchMetadata(); }
+    }, [isOpen, fetchMetadata]);    
+
+    const handleChange = async (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+
+        setFormData((prevData) => ({
+            ...prevData,
+            [name]: name === 'installment_number' ? Number(value) : value
+        }));
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setIsSaving(true);
 
         try {
-            if (isUpdate) {
-                console.log("Updating purchase", purchaseId);
+            const amountFloat = typeof formData.amount === 'string' ? parseFloat(formData.amount.replace(',', '.')) : formData.amount;
+            if (isUpdate && purchaseId) {
                 await updatePurchase(
                     purchaseId,
-                    purchaseDescription,
-                    parseFloat(purchaseAmount.replace(",", ".")),
-                    purchaseDate,
-                    purchaseInstallmentNumber,
-                    purchasePlace,
-                    purchasePaid,
-                    purchasePaymentType,
-                    purchaseCreditCard,
-                    purchaseType,
-                    purchasePerson
+                    formData.description,
+                    amountFloat,
+                    formData.date,
+                    formData.installment_number,
+                    formData.place,
+                    formData.paid,
+                    formData.payment_type,
+                    formData.credit_card,
+                    formData.purchase_type,
+                    formData.person
                 );
             } else {
-                const paidCorrected = purchaseCreditCard === "" ? false : true;
-                console.log("paymentType", purchasePaymentType)
-                console.log("card", purchaseCreditCard)
-                console.log("type", purchaseType)
-                console.log("person", purchasePerson)
-                console.log("purchaseId", purchaseId)
+                const paidCorrected = formData.credit_card !== "";
+                
                 await createPurchase(
-                    purchaseId,
-                    purchaseDescription,
-                    parseFloat(purchaseAmount.replace(",", ".")),
-                    purchaseDate,
-                    purchaseInstallmentNumber,
-                    purchasePlace,
+                    formData.description,
+                    amountFloat,
+                    formData.date,
+                    formData.installment_number,
+                    formData.place,
                     paidCorrected,
-                    purchasePaymentType,
-                    purchaseCreditCard,
-                    purchaseType,
-                    purchasePerson
+                    formData.payment_type,
+                    formData.credit_card,
+                    formData.purchase_type,
+                    formData.person
                 );
             }
-
             onPurchaseAction();
-        } catch (err) {
-            console.error("Error creating purchase", err);
-        }
-    };
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        switch (name) {
-            case 'description':
-                setPurchaseDescription(value);
-                break;
-            case 'amount':
-                setPurchaseAmount(value);
-                break;
-            case 'date':
-                setPurchaseDate(value);
-                break;
-            case 'installment_number':
-                setPurchaseInstallmentNumber(Number(value));
-                break;
-            case 'place':
-                setPurchasePlace(value);
-                break;
-            case 'payment_type':
-                setPurchasePaymentType(value);
-                break;
-            case 'credit_card':
-                setPurchaseCreditCard(value);
-                break;
-            case 'purchase_type':
-                setPurchaseType(value);
-                break;
-            case 'person':
-                setPurchasePerson(value);
-                break;
-            default:
-                break;
+        } catch (error) {
+            console.error("Error saving purchase", error);
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -255,181 +169,86 @@ const ModalPurchaseType: React.FC<ModalProps> = ({ isOpen, onClose, onPurchaseAc
     return (
         <div className="fixed inset-0 flex items-center justify-center z-50">
             <div className="fixed inset-0 bg-black opacity-50" onClick={onClose}></div>
-            {/* Main modal */}
             <div className="relative p-4 w-full max-h-full">
-                {/*Modal content */}
                 <div className="relative bg-white rounded-lg shadow-sm dark:bg-gray-700">
-                    {/* Modal header */}
-                    <div className="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600 border-gray-200">
+                    <div className="flex items-center justify-between p-4 border-b dark:border-gray-600">
                         <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-                            {title}
+                            {isUpdate ? "Atualização de Compra" : "Cadastro de Compra"}
                         </h3>
-                        <button type="button" onClick={onClose} className="end-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white" data-modal-hide="authentication-modal">
-                            <svg className="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
-                                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
-                            </svg>
-                            <span className="sr-only">Close modal</span>
+                        <button type="button" onClick={onClose} className="text-gray-400 hover:bg-gray-200 rounded-lg p-2">
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 14 14"><path stroke="currentColor" strokeWidth="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/></svg>
                         </button>
                     </div>
-                    {/* Modal body */}
+
                     <div className="p-4 md:p-5">
                         <form onSubmit={handleSubmit} className="space-y-4">
-                            <div className="flex">
-                                <div className="flex-1 mr-5">
-                                    <label htmlFor="place" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Local</label>
-                                    <input
-                                        type="text"
-                                        name="place"
-                                        id="place"
-                                        value={purchasePlace}
-                                        onChange={handleChange}
-                                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
-                                        placeholder="Digite o local da compra"
-                                    />
+                            {/* Linha 1: Local e Descrição */}
+                            <div className="flex gap-4">
+                                <div className="flex-1">
+                                    <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Local</label>
+                                    <input type="text" name="place" value={formData.place} onChange={handleChange} className="w-full p-2.5 bg-gray-50 border rounded-lg dark:bg-gray-600 dark:text-white" placeholder="Local da compra"/>
                                 </div>
                                 <div className="flex-1">
-                                    <label htmlFor="description" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Descrição</label>
-                                    <input
-                                        type="text"
-                                        name="description"
-                                        id="description"
-                                        value={purchaseDescription}
-                                        onChange={handleChange}
-                                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
-                                        placeholder="Digite uma descrição"
-                                    />
+                                    <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Descrição</label>
+                                    <input type="text" name="description" value={formData.description} onChange={handleChange} className="w-full p-2.5 bg-gray-50 border rounded-lg dark:bg-gray-600 dark:text-white" placeholder="Descrição"/>
                                 </div>
                             </div>
-                            <div className="flex">
-                                <div className="flex-1 mr-5">
-                                    <label htmlFor="date" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">* Data</label>
-                                    <input
-                                        type="date"
-                                        name="date"
-                                        id="date"
-                                        value={purchaseDate}
-                                        onChange={handleChange}
-                                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
-                                    />
-                                </div>
-                                <div className="flex-1 mr-5">
-                                    <label htmlFor="amount" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">* Valor (R$)</label>
-                                    <input
-                                        type="text"
-                                        name="amount"
-                                        id="amount"
-                                        value={purchaseAmount}
-                                        onChange={handleChange}
-                                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
-                                        placeholder="000,00"
-                                        required
-                                    />
+
+                            {/* Linha 2: Data, Valor e Parcelas */}
+                            <div className="flex gap-4">
+                                <div className="flex-1">
+                                    <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">* Data</label>
+                                    <input type="date" name="date" value={formData.date} onChange={handleChange} required className="w-full p-2.5 bg-gray-50 border rounded-lg dark:bg-gray-600 dark:text-white"/>
                                 </div>
                                 <div className="flex-1">
-                                    <label htmlFor="installment_number" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">* Parcelas</label>
-                                    <input
-                                        type="number"
-                                        name="installment_number"
-                                        id="installment_number"
-                                        value={purchaseInstallmentNumber}
-                                        onChange={handleChange}
-                                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
-                                        placeholder="0"
-                                        required
-                                    />
+                                    <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">* Valor (R$)</label>
+                                    <input type="text" name="amount" value={formData.amount} onChange={handleChange} required className="w-full p-2.5 bg-gray-50 border rounded-lg dark:bg-gray-600 dark:text-white" placeholder="0,00"/>
+                                </div>
+                                <div className="flex-1">
+                                    <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">* Parcelas</label>
+                                    <input type="number" name="installment_number" value={formData.installment_number} onChange={handleChange} required className="w-full p-2.5 bg-gray-50 border rounded-lg dark:bg-gray-600 dark:text-white"/>
                                 </div>
                             </div>
-                            <div className="flex">
-                                <div className="flex-1 mr-5">
-                                    <label htmlFor="person" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">* Pessoa</label>
-                                    <select
-                                        value={purchasePerson}
-                                        onChange={handleChange} // Alteração aqui
-                                        name="person"
-                                        id="person"
-                                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                    >
-                                        <option value="" disabled>Escolha a Pessoa</option>
-                                        {persons.length > 0 ? (
-                                            persons.map((person) => (
-                                                <option key={person.id} value={person.id}>
-                                                    {person.name}
-                                                </option>
-                                            ))
-                                        ) : (
-                                            <option value="" disabled>Nenhuma pessoa disponível</option>
-                                        )}
+
+                            {/* Linha 3: Selects */}
+                            <div className="flex gap-4 flex-wrap md:flex-nowrap">
+                                <div className="flex-1 min-w-[150px]">
+                                    <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">* Pessoa</label>
+                                    <select name="person" value={formData.person} onChange={handleChange} required className="w-full p-2.5 bg-gray-50 border rounded-lg dark:bg-gray-700 dark:text-white">
+                                        <option value="">Escolha a Pessoa</option>
+                                        {persons.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                     </select>
                                 </div>
-                                <div className="flex-1 mr-5">
-                                    <label htmlFor="payment_type" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">* Tipo de Pagamento</label>
-                                    <select
-                                        id="payment_type"
-                                        name="payment_type"
-                                        value={purchasePaymentType}
-                                        onChange={handleChange} // Alteração aqui
-                                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
-                                        <option disabled>Escolha o Tipo de Pagamento</option>
-                                        {paymentTypes.length > 0 ? (
-                                            paymentTypes.map((paymentType) => (
-                                                <option key={paymentType.id} value={paymentType.id}>
-                                                    {paymentType.name}
-                                                </option>
-                                            ))
-                                        ) : (
-                                            <option value="" disabled>Nenhuma Tipo de Pagamento disponível</option>
-                                        )}
+                                <div className="flex-1 min-w-[150px]">
+                                    <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">* Pagamento</label>
+                                    <select name="payment_type" value={formData.payment_type} onChange={handleChange} required className="w-full p-2.5 bg-gray-50 border rounded-lg dark:bg-gray-700 dark:text-white">
+                                        <option value="">Tipo</option>
+                                        {paymentTypes.map(pt => <option key={pt.id} value={pt.id}>{pt.name}</option>)}
                                     </select>
                                 </div>
-                                <div className="flex-1 mr-5">
-                                    <label htmlFor="credit_card" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Cartão de Credito</label>
-                                    <select
-                                        id="credit_card"
-                                        name="credit_card"
-                                        value={purchaseCreditCard}
-                                        onChange={handleChange} // Alteração aqui
-                                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                    >
-                                        <option value="" selected>Escolha o Cartão</option>
-                                        {cards.length > 0 ? (
-                                            cards.map((card) => (
-                                                <option key={card.id} value={card.id}>
-                                                    {card.owner} - {card.finalCardNumber}
-                                                </option>
-                                            ))
-                                        ) : (
-                                            <option value="" disabled>Nenhum cartão disponível</option>
-                                        )}
+                                <div className="flex-1 min-w-[150px]">
+                                    <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Cartão</label>
+                                    <select name="credit_card" value={formData.credit_card} onChange={handleChange} className="w-full p-2.5 bg-gray-50 border rounded-lg dark:bg-gray-700 dark:text-white">
+                                        <option value="">Nenhum</option>
+                                        {cards.map(c => <option key={c.id} value={c.id}>{c.owner} - {c.final_card_num}</option>)}
                                     </select>
                                 </div>
-                                <div className="flex-1">
-                                    <label htmlFor="purchase_type" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">* Tipo de Compra</label>
-                                    <select
-                                        id="purchase_type"
-                                        name="purchase_type"
-                                        value={purchaseType}
-                                        onChange={handleChange} // Alteração aqui
-                                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                    >
-                                        <option disabled>Escolha o Tipo de Compra</option>
-                                        {types.length > 0 ? (
-                                            types.map((type) => (
-                                                <option key={type.id} value={type.id}>
-                                                    {type.name}
-                                                </option>
-                                            ))
-                                        ) : (
-                                            <option value="" disabled>Nenhuma Tipo de Pagamento disponível</option>
-                                        )}
+                                <div className="flex-1 min-w-[150px]">
+                                    <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">* Tipo Compra</label>
+                                    <select name="purchase_type" value={formData.purchase_type} onChange={handleChange} required className="w-full p-2.5 bg-gray-50 border rounded-lg dark:bg-gray-700 dark:text-white">
+                                        <option value="">Tipo Compra</option>
+                                        {types.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                                     </select>
                                 </div>
                             </div>
-                            <div className="flex justify-center">
+
+                            <div className="flex justify-center pt-4">
                                 <button
                                     type="submit"
-                                    className="mt-5 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 sm:px-10 md:px-20 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 w-auto min-w-40"
+                                    disabled={isSaving}
+                                    className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 font-medium rounded-lg text-sm px-20 py-2.5 dark:bg-blue-600 disabled:opacity-50"
                                 >
-                                    {buttonText}
+                                    {isSaving ? "Salvando..." : (isUpdate ? "Atualizar Compra" : "Adicionar nova compra")}
                                 </button>
                             </div>
                         </form>
