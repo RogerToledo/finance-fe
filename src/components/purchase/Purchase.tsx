@@ -1,39 +1,23 @@
 import { useEffect, useState } from "react";
-import { getPurchases, deletePurchase } from "@/services/purchase";
+import { getPurchases, deletePurchase, type PurchasesResponse } from "@/services/purchase";
+import { getPurchasesInstallments, payInstallment, type Installment } from "@/services/installment";
+import { Eye, Layers, Pencil, Trash2, X } from 'lucide-react';
 import ModalPurchase from "./ModalPurchase";
-
-type UUID = string;
-
-interface Purchase {
-    id: UUID;
-    description: string;
-    amount: number;
-    date: string;
-	installment_number: number;
-    installment: number;
-    place: string;
-    paid: boolean;
-    payment_type: string;
-    credit_card: string;
-    purchase_type: string;
-    person: string;
-}
-
-interface PurchaseResponse {
-    message: Purchase[];
-    statusCode: number;
-}
+import ModalInstallments from "../installment/ModalInstallment";
 
 function Purchase() {
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [purchases, setPurchases] = useState<PurchaseResponse>({
+    const [purchases, setPurchases] = useState<PurchasesResponse>({
         message: [],
         statusCode: 0,
     });
     const [loading, setLoading] = useState(true);
+    const [success, setSuccess] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isUpdate, setIsUpdate] = useState<boolean>(false);
-    const [purchaseId, setPurchaseId] = useState<UUID | null>(null);
+    const [purchaseId, setPurchaseId] = useState<string | null>(null);
+    const [isInstallmentModalOpen, setIsInstallmentModalOpen] = useState(false);
+    const [selectedPurchaseInstallments, setSelectedPurchaseInstallments] = useState<Installment[]>([]);
 
     const openModal = () => setIsModalOpen(true);
     const closeModal = () => {
@@ -47,18 +31,24 @@ function Purchase() {
 
         try {
             const data = await getPurchases();
-            if (data) {
+            console.log("Fetched purchases:", data);
+            if (data && Array.isArray(data.message)) {
                 setPurchases(data);
+            } else {
+                setPurchases({ message: [], statusCode: 200 });
             }
         } catch (err) {
             if (err instanceof Error) {
                 setError(err.message);
             } else {
-                setError("An unknown error occurred");
+                setError("Erro desconhecido ao carregar compras");
             }
-        } finally {
-            setLoading(false);
-        }
+            
+            setPurchases({ message: [], statusCode: 500 });
+
+            } finally {
+                setLoading(false);
+            }
     };
 
     useEffect(() => {
@@ -67,10 +57,55 @@ function Purchase() {
 
     const handlePurchase = () => {
         fetchData();
-        closeModal();
     }
 
-    const handleDelete = async (id: UUID) => {
+    const handleInstallments = async (purchaseId: string) => {
+        try {
+            setPurchaseId(purchaseId);
+
+            const response = await getPurchasesInstallments(purchaseId);
+
+            setSelectedPurchaseInstallments(Array.isArray(response.message) ? response.message : [response.message]);
+            setIsInstallmentModalOpen(true);
+        } catch (err) {
+            console.error(err);
+            alert("Erro ao carregar parcelas.");
+        }
+    }
+
+    const handlePayInstallment = async (installmentId: string) => {
+        setError(null);
+        setSuccess(null);
+
+        try {
+            await payInstallment(installmentId); 
+
+            setIsInstallmentModalOpen(false);
+
+            setPurchaseId(null);
+            setSelectedPurchaseInstallments([]);
+            
+            setSuccess("Parcela paga com sucesso!");
+
+            setTimeout(() => {
+                setSuccess(null);
+            }, 3000);
+            
+            await fetchData(); 
+            
+        } catch (err) {
+            alert(`Erro ao processar pagamento: ${err instanceof Error ? err.message : "Erro desconhecido"}`);
+            throw err;
+        }
+    };
+
+    const handleView = (id: string) => {
+        setPurchaseId(id);
+        setIsUpdate(false);
+        openModal();
+    }
+
+    const handleDelete = async (id: string) => {
         if (!window.confirm("Tem certeza que deseja deletar esta compra?")) return;
 
         try{
@@ -104,6 +139,23 @@ function Purchase() {
                 <h1 className="text-2xl ml-11 mt-5 mr-10 font-semibold text-gray-900 dark:text-white">Compras</h1> 
             </div>
             <div className="relative overflow-x-auto mt-10 ml-10 mr-10 shadow-md sm:rounded-lg">
+                {success && (
+                    <div className="flex items-center p-4 mb-4 text-green-800 rounded-lg bg-green-50 dark:bg-gray-800 dark:text-green-400" role="alert">
+                        <svg className="flex-shrink-0 w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z"/>
+                        </svg>
+                        <div className="ms-3 text-sm font-medium">
+                            {success}
+                        </div>
+                        <button 
+                            onClick={() => setSuccess(null)}
+                            type="button" 
+                            className="ms-auto -mx-1.5 -my-1.5 bg-green-50 text-green-500 rounded-lg p-1.5 hover:bg-green-200 inline-flex items-center justify-center h-8 w-8 dark:bg-gray-800 dark:text-green-400 dark:hover:bg-gray-700"
+                        >
+                            <X size={14} />
+                        </button>
+                    </div>
+                )}
                 {loading && (
                     <div className="p-5 text-center text-gray-500 bg-white dark:bg-gray-800">
                         Carregando...
@@ -123,7 +175,7 @@ function Purchase() {
                     <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
                         <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                             <tr>
-                                <th scope="col" className="px-6 py-3">
+                                <th scope="col" className="px-10 py-3">
                                     Pessoa
                                 </th>
                                 <th scope="col" className="px-6 py-3">
@@ -149,7 +201,7 @@ function Purchase() {
                         <tbody>
                             {purchases?.message.map((message) => (
                                 <tr key={message.id} className="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700 border-gray-200">
-                                    <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                    <th scope="row" className="px-10 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                                         {message.person}
                                     </th>
                                     <td className="px-6 py-4">
@@ -162,32 +214,51 @@ function Purchase() {
                                         R$ {message.amount}
                                     </td>
                                     <td className="px-6 py-4">
-                                        {message.date}
+                                        {message.date ? new Date(message.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '-'}
                                     </td>
                                     <td className="px-6 py-4">
                                         {message.installment_number}
                                     </td>
-                                    <td className="px-6 py-2 text-right">
-                                        <button 
-                                            type="button"
-                                            onClick={ () => {
-                                                setPurchaseId(message.id);
-                                                setIsUpdate(true);
-                                                openModal();
-                                            }}
-                                            className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-3 py-2 me-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">Editar
-                                        </button>
-                                        <button 
-                                            type="button" 
-                                            onClick={ async () => { 
-                                                try {
-                                                    handleDelete(message.id);
-                                                } catch (error) {
-                                                    console.error(error);
-                                                }
-                                            }}
-                                            className="focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-2 py-2 me-1 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900">Deletar
-                                        </button>
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center justify-center gap-2">
+                                            <button 
+                                                onClick={() => handleView(message.id)}
+                                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                title="Visualizar detalhes"
+                                            >
+                                                <Eye size={18} />
+                                            </button>
+                                            <button 
+                                                onClick={() => handleInstallments(message.id)}
+                                                disabled={message.installment_number < 2}
+                                                className={`p-2 rounded-lg transition-colors ${
+                                                    message.installment_number < 2 
+                                                        ? "text-gray-400 cursor-not-allowed opacity-50"
+                                                        : "text-purple-600 hover:bg-purple-50"
+                                                }`}
+                                                title={message.installment_number < 2 ? "Compra à vista" : "Ver parcelas"}
+                                            >
+                                                <Layers size={18} />
+                                            </button>
+                                            <button 
+                                                onClick={() => {
+                                                    setPurchaseId(message.id);
+                                                    setIsUpdate(true);
+                                                    openModal();
+                                                }}
+                                                className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                                                title="Editar compra"
+                                            >
+                                                <Pencil size={18} />
+                                            </button>
+                                            <button 
+                                                onClick={() => handleDelete(message.id)}
+                                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                title="Excluir compra"
+                                            >
+                                                <Trash2 size={18} />
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}    
@@ -201,6 +272,12 @@ function Purchase() {
                 onPurchaseAction={handlePurchase}
                 isUpdate={isUpdate}
                 purchaseId={purchaseId}
+            />
+            <ModalInstallments
+                isOpen={isInstallmentModalOpen}
+                onClose={() => setIsInstallmentModalOpen(false)}
+                installments={selectedPurchaseInstallments || []}
+                onPay={handlePayInstallment}
             />
         </div>
     )

@@ -3,15 +3,17 @@ import ModalPaymentType from "./ModalPaymentType";
 import { 
     deletePaymentType, 
     getPaymentTypes,
-    type PaymentTypeResponse
+    type PaymentTypesResponse
 } from "@/services/paymentType";
+import axios from "axios";
 
 function PaymentType() {
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [paymentTypes, setPaymentTypes] = useState<PaymentTypeResponse>({
+    const [paymentTypes, setPaymentTypes] = useState<PaymentTypesResponse>({
         message: [],
         statusCode: 0,
     });
+    
     const [error, setError] = useState<string | null>(null);
     const [isUpdate, setIsUpdate] = useState<boolean>(false);
     const [paymentTypeId, setPaymentTypeId] = useState<string>("");
@@ -54,10 +56,11 @@ function PaymentType() {
             await deletePaymentType(id);
             await fetchData();
         } catch (err) {
-            if (err instanceof Error) {
-                setError(err.message);
+            if (axios.isAxiosError(err)) {
+                const apiMessage = err.response?.data?.message;
+                setError(apiMessage || "Ocorreu um erro inesperado.");
             } else {
-                setError("Ocorreu um erro desconhecido");
+                setError("Ocorreu um erro inesperado.");
             }
         }
     }
@@ -81,7 +84,7 @@ function PaymentType() {
                 <h1 className="text-2xl ml-10 mt-5 mr-10 font-semibold text-gray-900 dark:text-white text-center flex-1 pr-20">Tipo de Pagamento</h1> 
             </div>
             <div className="relative overflow-x-auto mt-10 ml-10 mr-10 shadow-md sm:rounded-lg">
-            {error && (
+                {error && (
                     <div className="flex items-center p-4 mb-4 text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400" role="alert">
                         <svg className="flex-shrink-0 w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z"/>
@@ -115,7 +118,7 @@ function PaymentType() {
                                 <th scope="col" className="px-30 py-3">
                                     Nome
                                 </th>
-                                <th scope="col" className="px-30 py-3">
+                                <th scope="col" className="px-10 py-3">
                                     À vista | parcelado
                                 </th>
                                 <th scope="col" className="px-0 py-3">
@@ -129,7 +132,7 @@ function PaymentType() {
                                     <td className="px-30 py-4">
                                         {message.name}
                                     </td>
-                                    <td className="px-40 py-4">
+                                    <td className="px-10 py-4">
                                         {message.spot_installment === 0 ? "À vista" : message.spot_installment === 1 ? "Parcelado" : "Ambos"}
                                     </td>
                                     <td className="px-6 py-2 text-right">

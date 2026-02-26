@@ -10,6 +10,11 @@ export interface PersonResponse {
     statusCode: number;
 }
 
+export interface PeopleResponse {
+    message: Person;
+    statusCode: number;
+}
+
 export const createPerson = async (name: string) => {
     const response = await instance.post('/v1/person', {
         name: name,
@@ -33,13 +38,13 @@ export const deletePerson = async (id: string) => {
     return response.data;
 }
 
-export const getPerson = async (id: string) => {
-    const response = await instance.get<Person>(`/v1/person/${id}`);
+export const getPeople = async (id: string) => {
+    const response = await instance.get<PeopleResponse>(`/v1/person/${id}`);
 
     return response.data;
 }
 
-export const getPersons = async () => {
-    const response = await instance.get<PersonResponse>('/v1/persons');
+export const getPerson = async () => {
+    const response = await instance.get<PersonResponse>('/v1/person');
     return response.data;
 }

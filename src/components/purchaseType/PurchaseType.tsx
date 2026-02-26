@@ -1,14 +1,15 @@
 import { useEffect, useState, useCallback } from "react";
 import ModalPurchaseType from "./ModalPurchaseType";
-import { deletePurchaseType, getPurchaseTypes, type PurchaseTypeResponse } from "@/services/purchaseType";
+import { deletePurchaseType, getPurchaseTypes, type PurchaseTypesResponse } from "@/services/purchaseType";
+
+import axios from "axios";
 
 function PurchaseType() {
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [purchaseTypes, setPurchaseTypes] = useState<PurchaseTypeResponse>({
+    const [purchaseTypes, setPurchaseTypes] = useState<PurchaseTypesResponse>({
         message: [],
         statusCode: 0
     });
-    const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isUpdate, setIsUpdate] = useState<boolean>(false);
     const [purchaseTypeId, setPurchaseTypeId] = useState<string>("");
@@ -18,15 +19,12 @@ function PurchaseType() {
     const closeModal = () => setIsModalOpen(false);
 
     const fetchData = useCallback(async () => {
-        setLoading(true);
         try {
             const data = await getPurchaseTypes();
             setPurchaseTypes(data);
         } catch (err: unknown) {
             const error = err as Error;
             setError(error.message || "Erro ao carregar dados");
-        } finally {
-            setLoading(false);
         }
     }, []); 
 
@@ -49,11 +47,15 @@ function PurchaseType() {
             await deletePurchaseType(id);
             setPurchaseTypes(prev => ({
                 ...prev,
-                Message: prev.message.filter(item => item.id !== id)
+                message: prev.message.filter(item => item.id !== id)
             }));
         } catch (err) {
-            console.error('Erro ao deletar:', err);
-            alert('Erro ao deletar o tipo de compra');
+            if (axios.isAxiosError(err)) {
+                const apiMessage = err.response?.data?.message;
+                setError(apiMessage || "Ocorreu um erro inesperado.");
+            } else {
+                setError("Ocorreu um erro inesperado.");
+            }
         } finally {
             setIsDeleting(null);
         }
@@ -65,7 +67,7 @@ function PurchaseType() {
         openModal();
     }
 
-    const isEmpty = !loading && !error && (!purchaseTypes?.message || purchaseTypes?.message?.length === 0);
+    const isEmpty = !error && (!purchaseTypes?.message || purchaseTypes?.message?.length === 0);
 
     return (
         <div>
@@ -82,14 +84,26 @@ function PurchaseType() {
                 </h1>
             </div>
             <div className="relative overflow-x-auto mt-10 ml-10 mr-10 shadow-md sm:rounded-lg">
-                {loading && (
-                    <div className="p-5 text-center text-gray-500 bg-white dark:bg-gray-800">
-                        Carregando...
-                    </div>
-                )}
-                {error && (
-                    <div className="p-5 text-center text-gray-500 bg-white dark:bg-gray-800">
-                        Error: {error}
+            {error && (
+                    <div className="flex items-center p-4 mb-4 text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400" role="alert">
+                        <svg className="flex-shrink-0 w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z"/>
+                        </svg>
+                        <span className="sr-only">Erro</span>
+                        <div className="ms-3 text-sm font-medium">
+                            {error}
+                        </div>
+                        <button 
+                            onClick={() => setError(null)}
+                            type="button" 
+                            className="ms-auto -mx-1.5 -my-1.5 bg-red-50 text-red-500 rounded-lg focus:ring-2 focus:ring-red-400 p-1.5 hover:bg-red-200 inline-flex items-center justify-center h-8 w-8 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-gray-700" 
+                            aria-label="Close"
+                        >
+                            <span className="sr-only">Fechar</span>
+                            <svg className="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                            </svg>
+                        </button>
                     </div>
                 )}
                 {isEmpty && (
@@ -97,28 +111,20 @@ function PurchaseType() {
                         Nenhum tipo de compra cadastrado.
                     </div>
                 )}
-                {!loading && !error && !isEmpty && (
+                {!isEmpty && (
                     <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
                         <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                             <tr>
-                                <th scope="col" className="w-1/3 px-6 py-3">
-                                    Id
-                                </th>
-                                <th scope="col" className="px-6 py-3">
+                                <th scope="col" className="px-20 py-3">
                                     Nome
                                 </th>
-                                <th scope="col" className="px-6 py-3">
-                                    Ação
-                                </th>
+                                <th scope="col" className="px-6 py-3"></th>
                             </tr>
                         </thead>
                         <tbody>
                             {purchaseTypes?.message.map((message) => (
                                 <tr key={message.id} className="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700 border-gray-200">
-                                    <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                                        {message.id}
-                                    </th>
-                                    <td className="px-6 py-4">
+                                    <td className="px-20 py-4">
                                         {message.name}
                                     </td>
                                     <td className="px-6 py-2 text-right">

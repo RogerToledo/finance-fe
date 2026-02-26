@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import ModalPerson from "./ModalPerson";
 import { 
-    getPersons, 
+    getPerson, 
     deletePerson,
     type PersonResponse
 } from "@/services/person";
@@ -25,7 +25,7 @@ function Person() {
         setError(null);
 
         try {
-            const data = await getPersons();
+            const data = await getPerson();
             if (data) {
                 setPersons(data);
             }        
@@ -50,6 +50,9 @@ function Person() {
     }
 
     const handleDelete = async (id: string) => {
+        if (!window.confirm('Tem certeza que deseja deletar este tipo de compra?')) {
+            return;
+        }
         try {
             await deletePerson(id);
             await fetchData();
@@ -98,10 +101,7 @@ function Person() {
                     <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
                         <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                             <tr>
-                                <th scope="col" className="w-1/3 px-6 py-3">
-                                    Id
-                                </th>
-                                <th scope="col" className="px-6 py-3">
+                                <th scope="col" className="px-20 py-3">
                                     Nome
                                 </th>
                                 <th scope="col" className="px-6 py-3"></th>
@@ -113,14 +113,8 @@ function Person() {
                                     key={message.id}
                                     className="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-500 even:dark:bg-gray-800 border-b dark:border-gray-700 border-gray-200"
                                 >
-                                    <th
-                                        scope="row"
-                                        className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white"
-                                    >
-                                        {message.id}
-                                    </th>
-                                    <td className="px-6 py-4">{message.name}</td>
-                                    <td className="px-6 py-2 text-right">
+                                    <td className="px-20 py-4">{message.name}</td>
+                                    <td className="px- py-2 text-right">
                                         <button 
                                             type="button"
                                             onClick={ () => {
