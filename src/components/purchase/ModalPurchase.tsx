@@ -60,10 +60,19 @@ const ModalPurchaseType: React.FC<ModalProps> = ({ isOpen, onClose, onPurchaseAc
     const [success, setSuccess] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
+    const isViewOnly = !isUpdate && purchaseId !== null;
+
+    const getTitle = () => {
+        if (isUpdate) return "Atualizar Compra";
+        if (isViewOnly) return "Visualizar Compra";
+        return "Cadastro de Compra";
+    }
+
     useEffect(() => {
         if (!isOpen) return;
 
-        if (isUpdate && purchaseId) {
+        if (purchaseId && (isUpdate || isViewOnly)) {
+            
             const fetchPurchaseType = async () => {
                 try {
                     const response = await getPurchase(purchaseId);
@@ -95,7 +104,7 @@ const ModalPurchaseType: React.FC<ModalProps> = ({ isOpen, onClose, onPurchaseAc
         } else {
            setFormData(initialFormState);
         }
-    }, [isOpen, isUpdate, purchaseId]);
+    }, [isOpen, isUpdate, purchaseId, isViewOnly]);
 
     const fetchMetadata = useCallback(async () => {
         try {
@@ -221,7 +230,7 @@ const ModalPurchaseType: React.FC<ModalProps> = ({ isOpen, onClose, onPurchaseAc
                 <div className="relative bg-white rounded-lg shadow-sm dark:bg-gray-700">
                     <div className="flex items-center justify-between p-4 border-b dark:border-gray-600">
                         <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-                            {isUpdate ? "Atualização de Compra" : "Cadastro de Compra"}
+                            {getTitle()}
                         </h3>
                         <button type="button" onClick={onClose} className="text-gray-400 hover:bg-gray-200 rounded-lg p-2">
                             <svg className="w-3 h-3" fill="none" viewBox="0 0 14 14"><path stroke="currentColor" strokeWidth="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/></svg>
@@ -278,11 +287,27 @@ const ModalPurchaseType: React.FC<ModalProps> = ({ isOpen, onClose, onPurchaseAc
                             <div className="flex gap-4">
                                 <div className="flex-1">
                                     <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Local</label>
-                                    <input type="text" name="place" value={formData.place} onChange={handleChange} className="w-full p-2.5 bg-gray-50 border rounded-lg dark:bg-gray-600 dark:text-white" placeholder="Local da compra"/>
+                                    <input 
+                                        type="text" 
+                                        name="place" 
+                                        value={formData.place} 
+                                        onChange={handleChange} 
+                                        disabled={isViewOnly}
+                                        className="w-full p-2.5 bg-gray-50 border rounded-lg dark:bg-gray-600 dark:text-white" 
+                                        placeholder="Local da compra"
+                                    />
                                 </div>
                                 <div className="flex-1">
                                     <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Descrição</label>
-                                    <input type="text" name="description" value={formData.description} onChange={handleChange} className="w-full p-2.5 bg-gray-50 border rounded-lg dark:bg-gray-600 dark:text-white" placeholder="Descrição"/>
+                                    <input 
+                                        type="text" 
+                                        name="description" 
+                                        value={formData.description} 
+                                        onChange={handleChange} 
+                                        disabled={isViewOnly}
+                                        className="w-full p-2.5 bg-gray-50 border rounded-lg dark:bg-gray-600 dark:text-white" 
+                                        placeholder="Descrição"
+                                    />
                                 </div>
                             </div>
 
@@ -290,15 +315,40 @@ const ModalPurchaseType: React.FC<ModalProps> = ({ isOpen, onClose, onPurchaseAc
                             <div className="flex gap-4">
                                 <div className="flex-1">
                                     <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">* Data</label>
-                                    <input type="date" name="date" value={formData.date} onChange={handleChange} required className="w-full p-2.5 bg-gray-50 border rounded-lg dark:bg-gray-600 dark:text-white"/>
+                                    <input 
+                                        type="date" 
+                                        name="date" 
+                                        value={formData.date}
+                                         onChange={handleChange} 
+                                         disabled={isViewOnly}
+                                         required 
+                                         className="w-full p-2.5 bg-gray-50 border rounded-lg dark:bg-gray-600 dark:text-white"
+                                    />
                                 </div>
                                 <div className="flex-1">
                                     <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">* Valor (R$)</label>
-                                    <input type="text" name="amount" value={formData.amount} onChange={handleChange} required className="w-full p-2.5 bg-gray-50 border rounded-lg dark:bg-gray-600 dark:text-white" placeholder="0,00"/>
+                                    <input 
+                                        type="text" 
+                                        name="amount" 
+                                        value={formData.amount} 
+                                        onChange={handleChange} 
+                                        disabled={isViewOnly}
+                                        required 
+                                        className="w-full p-2.5 bg-gray-50 border rounded-lg dark:bg-gray-600 dark:text-white" 
+                                        placeholder="0,00"
+                                    />
                                 </div>
                                 <div className="flex-1">
                                     <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">* Parcelas</label>
-                                    <input type="number" name="installment_number" value={formData.installment_number} onChange={handleChange} required className="w-full p-2.5 bg-gray-50 border rounded-lg dark:bg-gray-600 dark:text-white"/>
+                                    <input 
+                                        type="number" 
+                                        name="installment_number" 
+                                        value={formData.installment_number} 
+                                        onChange={handleChange} 
+                                        disabled={isViewOnly}
+                                        required 
+                                        className="w-full p-2.5 bg-gray-50 border rounded-lg dark:bg-gray-600 dark:text-white"
+                                    />
                                 </div>
                             </div>
 
@@ -306,14 +356,26 @@ const ModalPurchaseType: React.FC<ModalProps> = ({ isOpen, onClose, onPurchaseAc
                             <div className="flex gap-4 flex-wrap md:flex-nowrap">
                                 <div className="flex-1 min-w-[150px]">
                                     <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">* Pessoa</label>
-                                    <select name="person" value={formData.person} onChange={handleChange} required className="w-full p-2.5 bg-gray-50 border rounded-lg dark:bg-gray-700 dark:text-white">
+                                    <select 
+                                        name="person" 
+                                        value={formData.person} 
+                                        onChange={handleChange} 
+                                        disabled={isViewOnly}
+                                        required 
+                                        className="w-full p-2.5 bg-gray-50 border rounded-lg dark:bg-gray-700 dark:text-white">
                                         <option value="">Escolha a Pessoa</option>
                                         {persons.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                     </select>
                                 </div>
                                 <div className="flex-1 min-w-[150px]">
                                     <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">* Pagamento</label>
-                                    <select name="payment_type" value={formData.payment_type} onChange={handleChange} required className="w-full p-2.5 bg-gray-50 border rounded-lg dark:bg-gray-700 dark:text-white">
+                                    <select 
+                                        name="payment_type" 
+                                        value={formData.payment_type} 
+                                        disabled={isViewOnly}
+                                        onChange={handleChange} 
+                                        required 
+                                        className="w-full p-2.5 bg-gray-50 border rounded-lg dark:bg-gray-700 dark:text-white">
                                         <option value="">Tipo</option>
                                         {paymentTypes.map(pt => <option key={pt.id} value={pt.id}>{pt.name}</option>)}
                                     </select>
@@ -325,7 +387,7 @@ const ModalPurchaseType: React.FC<ModalProps> = ({ isOpen, onClose, onPurchaseAc
                                         value={formData.credit_card} 
                                         onChange={handleChange} 
                                         className={`w-full p-2.5 bg-gray-50 border rounded-lg dark:bg-gray-700 dark:text-white ${!isCreditCardSelected() ? 'bg-gray-200 cursor-not-allowed opacity-50' : 'bg-gray-50 border-gray-300'}`}
-                                        disabled={!isCreditCardSelected()}
+                                        disabled={!isCreditCardSelected() || isViewOnly}
                                     >
                                         <option value="">Nenhum</option>
                                         {Array.isArray(cards) && cards.map(c => <option key={c.id} value={c.id}>{c.owner} - {c.final_card_num}</option>)}
@@ -333,13 +395,19 @@ const ModalPurchaseType: React.FC<ModalProps> = ({ isOpen, onClose, onPurchaseAc
                                 </div>
                                 <div className="flex-1 min-w-[150px]">
                                     <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">* Tipo Compra</label>
-                                    <select name="purchase_type" value={formData.purchase_type} onChange={handleChange} required className="w-full p-2.5 bg-gray-50 border rounded-lg dark:bg-gray-700 dark:text-white">
+                                    <select 
+                                        name="purchase_type" 
+                                        value={formData.purchase_type} 
+                                        onChange={handleChange} 
+                                        disabled={isViewOnly}
+                                        required 
+                                            className="w-full p-2.5 bg-gray-50 border rounded-lg dark:bg-gray-700 dark:text-white">
                                         <option value="">Tipo Compra</option>
                                         {types.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                                     </select>
                                 </div>
                             </div>
-
+                            {!isViewOnly && (
                             <div className="flex justify-center pt-4">
                                 <button
                                     type="submit"
@@ -348,7 +416,8 @@ const ModalPurchaseType: React.FC<ModalProps> = ({ isOpen, onClose, onPurchaseAc
                                 >
                                     {isSaving ? "Salvando..." : (isUpdate ? "Atualizar Compra" : "Adicionar nova compra")}
                                 </button>
-                            </div>
+                            </div>)}
+                            
                         </form>
                     </div>
                 </div>

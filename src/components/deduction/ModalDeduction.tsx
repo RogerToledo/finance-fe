@@ -1,5 +1,5 @@
-import { createCreditCard, getCreditCard, updateCreditCard } from '@/services/creditCard';
-import { Person, getPerson } from '@/services/person';
+import { createDeduction, getDeductionById, updateDeduction } from '@/services/deduction';
+import { getEarnings, EarningsResponse } from '@/services/earning';
 import axios from 'axios';
 import { useState, useEffect } from 'react';
 import React from 'react';
@@ -9,83 +9,84 @@ interface ModalProps {
     onClose: () => void;
     onCardAction: () => void;
     isUpdate: boolean;
-    creditCardId: string;
+    deductionId: string;
 }
 
-const ModalcreditCard: React.FC<ModalProps> = ({ isOpen, onClose, onCardAction, isUpdate, creditCardId }) => {
-    const [title, setTitle] = useState("Cadastro de Cartão de Crédito");
-    const [buttonText, setButtonText] = useState("Adicionar novo cartão de crédito"); 
-    const [cardOwner, setCardOwner] = useState('');
-    const [finalCardNum, setFinalCardNum] = useState('');
-    const [type, setType] = useState('');
-    const [invoiceCloseDay, setInvoiceCloseDay] = useState(0);
-    const [dueDate, setDueDate] = useState(0);
-    const [ownerList, setOwnerList] = useState<Person[]>([]);
+const ModalDeduction: React.FC<ModalProps> = ({ isOpen, onClose, onCardAction, isUpdate, deductionId}) => {
+    const [buttonText, setButtonText] = useState("Adicionar nova dedução"); 
+    const [earningList, setEarningList] = useState<EarningsResponse>({ 
+        message: [],
+        statusCode: 0});
+    const [description, setDescription] = useState('');
+    const [amount, setAmount] = useState(0);
+    const [dateEnd, setDateEnd] = useState('');
+    const [active, setActive] = useState(false);
+    const [fixed, setFixed] = useState(false);
+    const [earningId, setEarningId] = useState('');
     const [success, setSuccess] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+
+     const isViewOnly = !isUpdate && deductionId !== "";
+
+     const getTitle = () => {
+        if (isUpdate) return "Atualizar Dedução";
+        if (isViewOnly) return "Visualizar Dedução";
+        return "Cadastro de Dedução";
+    }
     
     useEffect(() => {
-        const loadInitialData = async () => {
-            setSuccess(null);
-            setError(null);
+    const loadInitialData = async () => {
+        if (!isOpen) return;
 
-            if (isOpen) {
-                try {
-                    const ownerResponse = await getPerson();
-                    const owners = ownerResponse.message || ownerResponse;
-                    setOwnerList(owners);
+        setSuccess(null);
+        setError(null);
 
-                    console.log("Owner list loaded:", owners);
+        try {
+            const earningResponse = await getEarnings();
+            setEarningList(earningResponse);
 
-                    if (isUpdate && creditCardId) {
-                        setTitle("Atualização do Cartão de Crédito");
-                        setButtonText("Atualizar Cartão de Crédito");
+            if (deductionId && deductionId !== "" && (isUpdate || isViewOnly)) {
+                setButtonText("Atualizar Dedução");
 
-                        const cardResponse = await getCreditCard(creditCardId);
-                        const cardData = cardResponse.message;
+                const deductionResponse = await getDeductionById(deductionId);
+                const deductionData = deductionResponse.message;
+                const dateFormatted = deductionData.date_end ? deductionData.date_end.split('T')[0] : '';
 
-                        console.log("Dono que veio no Cartão:", cardData.owner_id || cardData.owner);
-
-                        const ownerId = cardData.owner_id
-                        setCardOwner(ownerId);
-                        setFinalCardNum(cardData.final_card_num);
-                        setType(cardData.type);
-                        setInvoiceCloseDay(cardData.invoice_closing_day);
-                    } else {
-                        setTitle("Cadastro de Cartão de Crédito");
-                        setButtonText("Adicionar novo cartão de crédito");
-                        setCardOwner("");
-                        setFinalCardNum("");
-                        setType("");
-                        setInvoiceCloseDay(0);
-                    }
-                } catch (error) {
-                    console.error("Error fetching card owners", error);
-                    setError("Falha ao carregar informações do servidor.");
-                }              
+                setEarningId(deductionData.earning_id || '');
+                setDescription(deductionData.description);
+                setAmount(deductionData.amount);
+                setDateEnd(dateFormatted);
+                setActive(deductionData.active);
+                setFixed(deductionData.fixed);
+            } else {
+                setButtonText("Adicionar nova dedução");
+                setEarningId("");
+                setDescription("");
+                setAmount(0);
+                setDateEnd("");
+                setActive(false);
+                setFixed(false);
             }
-        };
-        loadInitialData();
-    }, [isOpen, isUpdate, creditCardId]);    
+        } catch (error) {
+            setError("Falha ao carregar informações do servidor.");
+            console.error(error);
+        }
+    };
+    loadInitialData();
+}, [isOpen, isUpdate, deductionId, isViewOnly]);
 
         
     
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!cardOwner || cardOwner === "" || cardOwner === "00000000-0000-0000-0000-000000000000") {
-            setError("Por favor, selecione um proprietário válido.");
-            return;
-        }
-
         try {
             if (isUpdate) {
-                await updateCreditCard(creditCardId, cardOwner, finalCardNum, type, invoiceCloseDay, dueDate);
-                setSuccess("Cartão de crédito atualizado com sucesso!");
+                await updateDeduction(deductionId, description, amount, active, fixed, dateEnd, earningId);
+                setSuccess("Dedução atualizada com sucesso!");
             } else {
-                console.log("Criando cartão com os dados:", { cardOwner, finalCardNum, type, invoiceCloseDay });
-                await createCreditCard(cardOwner, finalCardNum, type, invoiceCloseDay, dueDate);
-                setSuccess("Cartão de crédito criado com sucesso!");
+                await createDeduction(description, amount, active, fixed, dateEnd, earningId);
+                setSuccess("Dedução criada com sucesso!");
             }
 
             setTimeout(() => {
@@ -93,7 +94,7 @@ const ModalcreditCard: React.FC<ModalProps> = ({ isOpen, onClose, onCardAction, 
                 onClose();
             }, 3000);  
         } catch (err) {
-            console.error("Error creating credit card", err);
+            console.error("Error creating deduction", err);
 
             if (axios.isAxiosError(err)) {
                 const apiMessage = err.response?.data?.message;
@@ -106,21 +107,27 @@ const ModalcreditCard: React.FC<ModalProps> = ({ isOpen, onClose, onCardAction, 
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
+
+
+
         switch(name) {
-            case 'Owner':
-                setCardOwner(value);
+            case 'EarningId':
+                setEarningId(value);
                 break;
-            case 'FinalCardNum':
-                setFinalCardNum(value);
+            case 'Description':
+                setDescription(value);
                 break;
-            case 'Type':
-                setType(value);
+            case 'Amount':
+                setAmount(Number(value));
                 break;
-            case 'InvoiceClosingDay':
-                setInvoiceCloseDay(Number(value));
+            case 'DateEnd':
+                setDateEnd(value);
                 break;
-            case 'DueDate':
-                setDueDate(Number(value));
+            case 'Active':
+                setActive(value === 'true');
+                break;
+            case 'Fixed':
+                setFixed(value === 'true');
                 break;
             default:
                 break;
@@ -142,7 +149,7 @@ const ModalcreditCard: React.FC<ModalProps> = ({ isOpen, onClose, onCardAction, 
                         {/* Modal header */}
                         <div className="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600 border-gray-200">
                             <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-                                {title}
+                                {getTitle()}
                             </h3>
                             <button type="button" onClick={onClose} className="end-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white" data-modal-hide="authentication-modal">
                                 <svg className="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
@@ -199,80 +206,95 @@ const ModalcreditCard: React.FC<ModalProps> = ({ isOpen, onClose, onCardAction, 
                             )}
                             <form onSubmit={handleSubmit} className="space-y-4" action="#">
                                 <div>
-                                    <label htmlFor="Owner" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Proprietário</label>
+                                    <label htmlFor="EarningId" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Proprietário</label>
                                     <select 
-                                        name="Owner" 
-                                        id="Owner"
-                                        value={cardOwner}
+                                        name="EarningId" 
+                                        id="EarningId"
+                                        value={earningId}
                                         onChange={handleChange}
+                                        disabled={isViewOnly}
                                         className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
                                         required
                                     >
-                                        <option value="">Escolha o proprietário do cartão</option>
-                                        {ownerList.map((owner) => (
-                                            <option key={owner.id} value={owner.id}>{owner.name}</option>
+                                        <option value="">Escolha o proprietário do ganho</option>
+                                        {earningList.message.map((earning) => (
+                                            <option key={earning.id} value={earning.id}>{earning.person_name} - {earning.description}</option>
                                         ))}
                                     </select>    
                                 </div>
                                 <div>
-                                    <label htmlFor="FinalCardNum" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Final do Cartão</label>
+                                    <label htmlFor="Description" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Descrição</label>
                                     <input 
                                         type="text" 
-                                        name="FinalCardNum"
-                                        id="FinalCardNum" 
-                                        value={finalCardNum}
+                                        name="Description"
+                                        id="Description" 
+                                        value={description}
                                         onChange={handleChange}
+                                        disabled={isViewOnly}
                                         className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" 
-                                        placeholder="0000" 
+                                        placeholder="Descrição da dedução" 
                                         required 
                                     />
                                 </div>
                                 <div>
-                                    <label htmlFor="Type" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tipo do Cartão</label>
-                                    <select 
-                                        value={type}
-                                        onChange={(e) => setType(e.target.value)}
-                                        name="Type"
-                                        id="Type" 
+                                    <label htmlFor="Amount" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Valor</label>
+                                    <input 
+                                        type="number" 
+                                        name="Amount"
+                                        id="Amount" 
+                                        value={amount}
+                                        onChange={handleChange}
+                                        disabled={isViewOnly}
+                                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" 
+                                        placeholder="0.00" 
+                                        required 
+                                    />
+                                </div>
+                                <div>
+                                    <label htmlFor="DateEnd" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Data</label>
+                                    <input
+                                        type="date"
+                                        name="DateEnd"
+                                        id="DateEnd"
+                                        value={dateEnd}
+                                        onChange={handleChange}
+                                        disabled={isViewOnly}
                                         className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                    >
-                                        <option value="">Escolha o tipo do cartão</option>
-                                        <option value="F">Físico</option>
-                                        <option value="V">Virtual</option>
-                                        <option value="VT">Virtual Temporário</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label htmlFor="InvoiceClosingDay" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Dia do Fechamento da Fatura</label>
-                                    <input 
-                                        type="text" 
-                                        name="InvoiceClosingDay" 
-                                        id="InvoiceClosingDay" 
-                                        value={invoiceCloseDay}
-                                        onChange={handleChange}
-                                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" 
-                                        placeholder="15" 
-                                        required 
                                     />
                                 </div>
-                                <div>
-                                    <label htmlFor="DueDate" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Dia do Vencimento da Fatura</label>
-                                    <input 
-                                        type="text" 
-                                        name="DueDate" 
-                                        id="DueDate" 
-                                        value={dueDate}
-                                        onChange={handleChange}
-                                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" 
-                                        placeholder="15" 
-                                        required 
-                                    />
+                                <div className='flex gap-10 items-start'>
+                                    <div>
+                                        <label htmlFor="Active" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Ativo</label>
+                                        <input 
+                                            checked={active}
+                                            onChange={(e) => setActive(e.target.checked)}
+                                            type="checkbox"
+                                            name="Active" 
+                                            id="Active" 
+                                            disabled={isViewOnly}
+                                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" 
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="Fixed" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Fixo</label>
+                                        <input 
+                                            checked={fixed}
+                                            onChange={(e) => setFixed(e.target.checked)}
+                                            type="checkbox"
+                                            name="Fixed" 
+                                            id="Fixed" 
+                                            disabled={isViewOnly}
+                                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" 
+                                        />
+                                    </div>
                                 </div>
-                                <button 
-                                    type="submit" 
-                                    className="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
-                                    {buttonText}
-                                </button>
+                                {!isViewOnly && (    
+                                    <button 
+                                        type="submit" 
+                                        className="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+                                        {buttonText}
+                                    </button>
+                                )}
                             </form>
                         </div>
                     </div>
@@ -281,4 +303,4 @@ const ModalcreditCard: React.FC<ModalProps> = ({ isOpen, onClose, onCardAction, 
     );
 };
 
-export default ModalcreditCard;
+export default ModalDeduction;

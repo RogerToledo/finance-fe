@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import ModalPurchaseType from "./ModalPurchaseType";
 import { deletePurchaseType, getPurchaseTypes, type PurchaseTypesResponse } from "@/services/purchaseType";
+import {Pencil, Trash2 } from 'lucide-react';
 
 import axios from "axios";
 
@@ -135,19 +136,18 @@ function PurchaseType() {
                                                 setIsUpdate(true);
                                                 openModal();
                                             }}
-                                            className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-3 py-2 me-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">Editar
+                                            className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                                            title="Editar Tipo de Compra"
+                                        >
+                                            <Pencil size={18} />
                                         </button>
                                         <button 
                                             type="button" 
                                             onClick={() => handleDelete(message.id)}
                                             disabled={isDeleting === message.id}
-                                            className={`focus:outline-none text-white font-medium rounded-lg text-sm px-2 py-2 me-1 ${
-                                                isDeleting === message.id 
-                                                    ? 'bg-gray-500 cursor-not-allowed' 
-                                                    : 'bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900'
-                                            }`}
+                                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
-                                            {isDeleting === message.id ? 'Deletando...' : 'Deletar'}
+                                            <Trash2 size={18} />
                                         </button>
                                     </td>
                                 </tr>

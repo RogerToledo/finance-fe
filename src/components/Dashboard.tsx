@@ -36,7 +36,7 @@ const options = {
     },   
 }
 
-function Dashboar() {
+function Dashboard() {
     return (
         <div>
             <div className="grid grid-cols-4 gap-4 p-4">
@@ -65,4 +65,4 @@ function Dashboar() {
     );
 }
 
-export default Dashboar;
+export default Dashboard;

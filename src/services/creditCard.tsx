@@ -2,7 +2,7 @@ import instance from "./config";
 
 export interface CreditCard {
     id: string;
-    id_owner: string;
+    owner_id: string;
     owner: string;
     final_card_num: string;
     type: string;

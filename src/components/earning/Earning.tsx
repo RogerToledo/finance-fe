@@ -1,18 +1,20 @@
 import { useState, useEffect } from "react";
-import { getCreditCards, deleteCreditCard, CreditCardsResponse} from "@/services/creditCard";
-import ModalCreditCard from "./ModalCreditCard";
+import { getEarnings, deleteEarning, EarningsResponse} from "@/services/earning";
+import ModalEarning from "./ModalEarning";
 import axios from "axios";
-import {Pencil, Trash2 } from 'lucide-react';
+import { Eye, Pencil, Trash2} from 'lucide-react';
+import Link from 'next/link';
 
-function CreditCard() {
-    const [creditCards, setCreditCards] = useState<CreditCardsResponse>({
+function Earning() {
+    const [earnings, setEarnings] = useState<EarningsResponse>({
         message: [],
         statusCode: 0
     });
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const [isUpdate, setIsUpdate] = useState<boolean>(false);
-    const [creditCardId, setCreditCardId] = useState<string>("");
+    const [earningId, setEarningId] = useState<string>("");
+
 
     const openModal = () => setIsModalOpen(true);
     const closeModal = () => setIsModalOpen(false);
@@ -21,9 +23,10 @@ function CreditCard() {
         setError(null);
 
         try {
-            const data = await getCreditCards();
+            const data = await getEarnings();
+            console.log("Ganhos recebidos da API:", data);
             if (data) {
-                setCreditCards(data);
+                setEarnings(data);
             }
         } catch (err) {
             if (err instanceof Error) {
@@ -38,18 +41,24 @@ function CreditCard() {
         fetchData();
     }, []);
 
-    const handleCreditCard = async() => {
+    const handleEarning = async() => {
         await fetchData();
         closeModal();
     }
 
+    const handleView = (id: string) => {
+        setEarningId(id);
+        setIsUpdate(false);
+        openModal();
+    }
+
     const handleDelete = async (id: string) => {
-        if (!window.confirm('Tem certeza que deseja deletar este cartão de crédito?')) {
+        if (!window.confirm('Tem certeza que deseja deletar este ganho?')) {
             return;
         }
         
         try {
-            await deleteCreditCard(id)
+            await deleteEarning(id)
             await fetchData();
         } catch (err) {
             console.error(err);
@@ -63,24 +72,34 @@ function CreditCard() {
     } 
 
     const handleOpenNew = () => {
-        setCreditCardId("");
+        setEarningId("");
         setIsUpdate(false);
         openModal();
     }
 
-    const isEmpty = !error && (!Array.isArray(creditCards?.message) || creditCards.message.length === 0);
+    const isEmpty = !error && (!Array.isArray(earnings?.message) || earnings.message.length === 0);
 
     return (
         <div>
             <div className="flex items-center mt-5">
-                <button 
-                    type="button" 
-                    className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 ml-10 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
-                    onClick={handleOpenNew}
-                >
-                    Novo
-                </button> 
-                <h1 className="text-2xl ml-10 mt-5 mr-10 font-semibold text-gray-900 dark:text-white text-center flex-1 pr-20">Cartão de Crédito</h1> 
+                <div className="flex gap-2">
+                    <button 
+                        type="button" 
+                        className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 ml-10 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
+                        onClick={handleOpenNew}
+                    >
+                        Novo
+                    </button> 
+                    <Link href="/deduction">
+                        <button 
+                            type="button" 
+                            className="text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 ml-10 dark:bg-red-500 dark:hover:bg-red-700 focus:outline-none dark:focus:ring-red-800"
+                        >
+                            Deduções
+                        </button> 
+                    </Link>  
+                </div>  
+                <h1 className="text-2xl ml-10 mt-5 mr-10 font-semibold text-gray-900 dark:text-white px-70 flex-1 pr-20">Ganhos</h1> 
             </div>
 
             <div className="relative overflow-x-auto mt-10 ml-10 mr-10 shadow-md sm:rounded-lg">
@@ -108,7 +127,7 @@ function CreditCard() {
                 )}
                 {isEmpty && (
                     <div className="p-5 text-center text-gray-500 bg-white dark:bg-gray-800">
-                        Não existe cartão de crédito cadastrado.
+                        Não existe ganho cadastrado.
                     </div>
                 )} 
                 {!isEmpty && (
@@ -116,19 +135,19 @@ function CreditCard() {
                         <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                             <tr>
                                 <th scope="col" className="px-15 py-3">
-                                    Proprietário
+                                    Pessoa
                                 </th>
                                 <th scope="col" className="px-6 py-3">
-                                    Cartão Final
+                                    Descrição
                                 </th>
                                 <th scope="col" className="px-6 py-3">
-                                    Tipo de Cartão
+                                    Data
                                 </th>
                                 <th scope="col" className="px-6 py-3">
-                                    Dia do Fechamento
+                                    Ganho Bruto
                                 </th>
                                 <th scope="col" className="px-6 py-3">
-                                    Dia do Vencimento
+                                    Ganho Líquido
                                 </th>
                                 <th scope="col" className="px-0 py-3">
                                     
@@ -136,42 +155,49 @@ function CreditCard() {
                             </tr>
                         </thead>
                         <tbody>
-                            {creditCards?.message.map((card) => (
-                                <tr key={card.id} className="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700 border-gray-200">
+                            {earnings?.message.map((earning) => (
+                                <tr key={earning.id} className="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700 border-gray-200">
                                     <td className="px-15 py-4">
-                                        {card.owner}
+                                        {earning.person_name || '-'}
                                     </td>
                                     <td className="px-6 py-4">
-                                        {card.final_card_num}
+                                        {earning.description}
                                     </td>
                                     <td className="px-6 py-4">
-                                        {card.type}
+                                        {earning.date ? new Date(earning.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '-'}
                                     </td>
                                     <td className="px-6 py-4">
-                                        {card.invoice_closing_day}
+                                        R$ {earning.amount}
                                     </td>
                                     <td className="px-6 py-4">
-                                        {card.due_date}
+                                        {earning.net_salary} 
                                     </td>
                                     <td className="px-6 py-2 text-right">
                                         <button 
+                                                onClick={() => handleView(earning.id)}
+                                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                title="Visualizar detalhes"
+                                        >
+                                            <Eye size={18} />
+                                        </button>
+                                        <button 
                                             type="button"
                                             onClick={ () => {
-                                                setCreditCardId(card.id);
+                                                setEarningId(earning.id);
                                                 setIsUpdate(true);
                                                 openModal();
                                             }}
                                             className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
-                                            title="Editar Cartão"
-                                        >    
+                                            title="Editar ganho"
+                                        >
                                             <Pencil size={18} />
                                         </button>
                                         <button 
                                             type="button" 
-                                            onClick={() => {handleDelete(card.id)}}
+                                            onClick={() => {handleDelete(earning.id)}}
                                             className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                            title="Deletar Cartão"
-                                        >
+                                                title="Excluir ganho`"
+                                            >
                                             <Trash2 size={18} />
                                         </button>
                                     </td>
@@ -181,15 +207,15 @@ function CreditCard() {
                     </table>
                 )}
             </div>
-            <ModalCreditCard 
+            <ModalEarning
                 isOpen={isModalOpen} 
                 onClose={closeModal} 
-                onCardAction={handleCreditCard}
+                onCardAction={handleEarning}
                 isUpdate={isUpdate}
-                creditCardId={isUpdate ? creditCardId : ""}
+                earningId={earningId}
             />
         </div>
     )
 }
 
-export default CreditCard;
+export default Earning;

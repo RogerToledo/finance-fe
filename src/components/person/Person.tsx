@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import ModalPerson from "./ModalPerson";
+import {Pencil, Trash2 } from 'lucide-react';
 import { 
     getPerson, 
     deletePerson,
@@ -101,7 +102,7 @@ function Person() {
                     <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
                         <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                             <tr>
-                                <th scope="col" className="px-20 py-3">
+                                <th scope="col" className="px-15 py-3">
                                     Nome
                                 </th>
                                 <th scope="col" className="px-6 py-3"></th>
@@ -113,8 +114,8 @@ function Person() {
                                     key={message.id}
                                     className="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-500 even:dark:bg-gray-800 border-b dark:border-gray-700 border-gray-200"
                                 >
-                                    <td className="px-20 py-4">{message.name}</td>
-                                    <td className="px- py-2 text-right">
+                                    <td className="px-15 py-4">{message.name}</td>
+                                    <td className="px-5 py-2 text-right">
                                         <button 
                                             type="button"
                                             onClick={ () => {
@@ -122,7 +123,10 @@ function Person() {
                                                 setIsUpdate(true);
                                                 openModal();
                                             }}
-                                            className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-3 py-2 me-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">Editar
+                                            className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                                            title="Editar Pessoa"
+                                        >    
+                                            <Pencil size={18} />
                                         </button>
                                         <button 
                                             type="button" 
@@ -133,7 +137,10 @@ function Person() {
                                                     console.error(error);
                                                 }
                                             }}
-                                            className="focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-2 py-2 me-1 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900">Deletar
+                                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                            title="Deletar Pessoa"
+                                        >
+                                            <Trash2 size={18} />
                                         </button>
                                     </td>
                                 </tr>

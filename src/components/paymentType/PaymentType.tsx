@@ -6,6 +6,7 @@ import {
     type PaymentTypesResponse
 } from "@/services/paymentType";
 import axios from "axios";
+import {Pencil, Trash2 } from 'lucide-react';
 
 function PaymentType() {
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -143,7 +144,10 @@ function PaymentType() {
                                                 setIsUpdate(true);
                                                 openModal();
                                             }}
-                                            className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-3 py-2 me-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">Editar
+                                            className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                                            title="Editar Tipo de Pagamento"
+                                        >
+                                            <Pencil size={18} />
                                         </button>
                                         <button 
                                             type="button" 
@@ -154,7 +158,10 @@ function PaymentType() {
                                                     console.error(error);
                                                 }
                                             }}
-                                            className="focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-2 py-2 me-1 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900">Deletar
+                                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                            title="Deletar Tipo de Pagamento"
+                                        >
+                                            <Trash2 size={18} />
                                         </button>
                                     </td>
                                 </tr>

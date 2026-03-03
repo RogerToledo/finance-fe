@@ -1,4 +1,4 @@
-import { createCreditCard, getCreditCard, updateCreditCard } from '@/services/creditCard';
+import { createEarning, getEarningBy, updateEarning } from '@/services/earning';
 import { Person, getPerson } from '@/services/person';
 import axios from 'axios';
 import { useState, useEffect } from 'react';
@@ -9,20 +9,28 @@ interface ModalProps {
     onClose: () => void;
     onCardAction: () => void;
     isUpdate: boolean;
-    creditCardId: string;
+    earningId: string;
 }
 
-const ModalcreditCard: React.FC<ModalProps> = ({ isOpen, onClose, onCardAction, isUpdate, creditCardId }) => {
-    const [title, setTitle] = useState("Cadastro de Cartão de Crédito");
-    const [buttonText, setButtonText] = useState("Adicionar novo cartão de crédito"); 
-    const [cardOwner, setCardOwner] = useState('');
-    const [finalCardNum, setFinalCardNum] = useState('');
-    const [type, setType] = useState('');
-    const [invoiceCloseDay, setInvoiceCloseDay] = useState(0);
-    const [dueDate, setDueDate] = useState(0);
+const ModalEarning: React.FC<ModalProps> = ({ isOpen, onClose, onCardAction, isUpdate, earningId}) => {
+    const [buttonText, setButtonText] = useState("Adicionar novo ganho"); 
+    const [earningOwner, setEarningOwner] = useState('');
+    const [description, setDescription] = useState('');
+    const [amount, setAmount] = useState(0);
+    const [date, setDate] = useState('');
+    const [active, setActive] = useState(false);
+    const [isMonthly, setIsMonthly] = useState(false);
     const [ownerList, setOwnerList] = useState<Person[]>([]);
     const [success, setSuccess] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+
+    const isViewOnly = !isUpdate && earningId !== "";
+
+     const getTitle = () => {
+        if (isUpdate) return "Atualizar Ganho";
+        if (isViewOnly) return "Visualizar Ganho";
+        return "Cadastro de Ganho";
+    }
     
     useEffect(() => {
         const loadInitialData = async () => {
@@ -31,61 +39,66 @@ const ModalcreditCard: React.FC<ModalProps> = ({ isOpen, onClose, onCardAction, 
 
             if (isOpen) {
                 try {
-                    const ownerResponse = await getPerson();
-                    const owners = ownerResponse.message || ownerResponse;
+                    const personResponse = await getPerson();
+                    const owners = personResponse.message || personResponse;
                     setOwnerList(owners);
 
-                    console.log("Owner list loaded:", owners);
+                    if (earningId && earningId !== "" && (isUpdate || isViewOnly)) {
+                        setButtonText("Atualizar Ganho");
 
-                    if (isUpdate && creditCardId) {
-                        setTitle("Atualização do Cartão de Crédito");
-                        setButtonText("Atualizar Cartão de Crédito");
+                        const earningResponse = await getEarningBy(earningId);
+                        const earningData = earningResponse.message;
 
-                        const cardResponse = await getCreditCard(creditCardId);
-                        const cardData = cardResponse.message;
+                        const ownerId = earningData.person_id || "00000000-0000-0000-0000-000000000000";
+                        const dateFormatted = earningData.date ? earningData.date.split('T')[0] : '';
 
-                        console.log("Dono que veio no Cartão:", cardData.owner_id || cardData.owner);
-
-                        const ownerId = cardData.owner_id
-                        setCardOwner(ownerId);
-                        setFinalCardNum(cardData.final_card_num);
-                        setType(cardData.type);
-                        setInvoiceCloseDay(cardData.invoice_closing_day);
+                        setEarningOwner(ownerId);
+                        setDescription(earningData.description);
+                        setAmount(earningData.amount);
+                        setDate(dateFormatted);
+                        setActive(earningData.active);
+                        setIsMonthly(earningData.is_monthly);
                     } else {
-                        setTitle("Cadastro de Cartão de Crédito");
-                        setButtonText("Adicionar novo cartão de crédito");
-                        setCardOwner("");
-                        setFinalCardNum("");
-                        setType("");
-                        setInvoiceCloseDay(0);
+                        setButtonText("Adicionar novo ganho");
+                        setEarningOwner("");
+                        setDescription("");
+                        setAmount(0);
+                        setDate("");
+                        setActive(false);
+                        setIsMonthly(false);
                     }
                 } catch (error) {
-                    console.error("Error fetching card owners", error);
-                    setError("Falha ao carregar informações do servidor.");
+                    if (axios.isAxiosError(error)) {
+                        const apiMessage = error.response?.data?.message;
+                        console.error("API Error:", apiMessage);
+                        setError(apiMessage || "Falha ao carregar informações do servidor.");
+                    } else {
+                        console.error("Unexpected Error:", error);
+                        setError("Ocorreu um erro inesperado ao carregar os dados.");
+                    }
                 }              
             }
         };
         loadInitialData();
-    }, [isOpen, isUpdate, creditCardId]);    
+    }, [isOpen, isUpdate, earningId]);    
 
         
     
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!cardOwner || cardOwner === "" || cardOwner === "00000000-0000-0000-0000-000000000000") {
+        if (!earningOwner || earningOwner === "" || earningOwner === "00000000-0000-0000-0000-000000000000") {
             setError("Por favor, selecione um proprietário válido.");
             return;
         }
 
         try {
             if (isUpdate) {
-                await updateCreditCard(creditCardId, cardOwner, finalCardNum, type, invoiceCloseDay, dueDate);
-                setSuccess("Cartão de crédito atualizado com sucesso!");
+                await updateEarning(earningId, description, amount, date, active, isMonthly, earningOwner);
+                setSuccess("Ganho atualizado com sucesso!");
             } else {
-                console.log("Criando cartão com os dados:", { cardOwner, finalCardNum, type, invoiceCloseDay });
-                await createCreditCard(cardOwner, finalCardNum, type, invoiceCloseDay, dueDate);
-                setSuccess("Cartão de crédito criado com sucesso!");
+                    await createEarning(description, amount, date, active, isMonthly, earningOwner);
+                setSuccess("Ganho criado com sucesso!");
             }
 
             setTimeout(() => {
@@ -108,19 +121,22 @@ const ModalcreditCard: React.FC<ModalProps> = ({ isOpen, onClose, onCardAction, 
         const { name, value } = e.target;
         switch(name) {
             case 'Owner':
-                setCardOwner(value);
+                setEarningOwner(value);
                 break;
-            case 'FinalCardNum':
-                setFinalCardNum(value);
+            case 'Description':
+                setDescription(value);
                 break;
-            case 'Type':
-                setType(value);
+            case 'Amount':
+                setAmount(Number(value));
                 break;
-            case 'InvoiceClosingDay':
-                setInvoiceCloseDay(Number(value));
+            case 'Date':
+                setDate(value);
                 break;
-            case 'DueDate':
-                setDueDate(Number(value));
+            case 'Active':
+                setActive(value === 'true');
+                break;
+            case 'IsMonthly':
+                setIsMonthly(value === 'true');
                 break;
             default:
                 break;
@@ -142,7 +158,7 @@ const ModalcreditCard: React.FC<ModalProps> = ({ isOpen, onClose, onCardAction, 
                         {/* Modal header */}
                         <div className="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600 border-gray-200">
                             <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-                                {title}
+                                {getTitle()}
                             </h3>
                             <button type="button" onClick={onClose} className="end-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white" data-modal-hide="authentication-modal">
                                 <svg className="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
@@ -203,76 +219,91 @@ const ModalcreditCard: React.FC<ModalProps> = ({ isOpen, onClose, onCardAction, 
                                     <select 
                                         name="Owner" 
                                         id="Owner"
-                                        value={cardOwner}
+                                        value={earningOwner}
                                         onChange={handleChange}
+                                        disabled={isViewOnly}
                                         className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
                                         required
                                     >
-                                        <option value="">Escolha o proprietário do cartão</option>
+                                        <option value="">Escolha o proprietário do ganho</option>
                                         {ownerList.map((owner) => (
                                             <option key={owner.id} value={owner.id}>{owner.name}</option>
                                         ))}
                                     </select>    
                                 </div>
                                 <div>
-                                    <label htmlFor="FinalCardNum" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Final do Cartão</label>
+                                    <label htmlFor="Description" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Descrição</label>
                                     <input 
                                         type="text" 
-                                        name="FinalCardNum"
-                                        id="FinalCardNum" 
-                                        value={finalCardNum}
+                                        name="Description"
+                                        id="Description" 
+                                        value={description}
                                         onChange={handleChange}
+                                        disabled={isViewOnly}
                                         className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" 
-                                        placeholder="0000" 
+                                        placeholder="Descrição do ganho" 
                                         required 
                                     />
                                 </div>
                                 <div>
-                                    <label htmlFor="Type" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tipo do Cartão</label>
-                                    <select 
-                                        value={type}
-                                        onChange={(e) => setType(e.target.value)}
-                                        name="Type"
-                                        id="Type" 
+                                    <label htmlFor="Amount" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Valor</label>
+                                    <input 
+                                        type="number" 
+                                        name="Amount"
+                                        id="Amount" 
+                                        value={amount}
+                                        onChange={handleChange}
+                                        disabled={isViewOnly}
+                                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" 
+                                        placeholder="0.00" 
+                                        required 
+                                    />
+                                </div>
+                                <div>
+                                    <label htmlFor="Date" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Data</label>
+                                    <input
+                                        type="date"
+                                        name="Date"
+                                        id="Date"
+                                        value={date}
+                                        onChange={handleChange}
+                                        disabled={isViewOnly}
                                         className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                    >
-                                        <option value="">Escolha o tipo do cartão</option>
-                                        <option value="F">Físico</option>
-                                        <option value="V">Virtual</option>
-                                        <option value="VT">Virtual Temporário</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label htmlFor="InvoiceClosingDay" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Dia do Fechamento da Fatura</label>
-                                    <input 
-                                        type="text" 
-                                        name="InvoiceClosingDay" 
-                                        id="InvoiceClosingDay" 
-                                        value={invoiceCloseDay}
-                                        onChange={handleChange}
-                                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" 
-                                        placeholder="15" 
-                                        required 
                                     />
                                 </div>
-                                <div>
-                                    <label htmlFor="DueDate" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Dia do Vencimento da Fatura</label>
-                                    <input 
-                                        type="text" 
-                                        name="DueDate" 
-                                        id="DueDate" 
-                                        value={dueDate}
-                                        onChange={handleChange}
-                                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" 
-                                        placeholder="15" 
-                                        required 
-                                    />
-                                </div>
-                                <button 
-                                    type="submit" 
-                                    className="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
-                                    {buttonText}
-                                </button>
+                                <div className='flex gap-10 items-start'>
+                                    <div>
+                                        <label htmlFor="Active" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Ativo</label>
+                                        <input 
+                                            checked={active}
+                                            onChange={(e) => setActive(e.target.checked)}
+                                            type="checkbox"
+                                            name="Active" 
+                                            id="Active" 
+                                            disabled={isViewOnly}
+                                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" 
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="IsMonthly" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Mensal</label>
+                                        <input 
+                                            checked={isMonthly}
+                                            onChange={(e) => setIsMonthly(e.target.checked)}
+                                            type="checkbox"
+                                            name="IsMonthly" 
+                                            id="IsMonthly" 
+                                            disabled={isViewOnly}
+                                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" 
+                                        />
+                                    </div>
+                                </div>    
+                                {!isViewOnly && (  
+                                    <button 
+                                        type="submit" 
+                                        className="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+                                        {buttonText}
+                                    </button>
+                                )}
                             </form>
                         </div>
                     </div>
@@ -281,4 +312,4 @@ const ModalcreditCard: React.FC<ModalProps> = ({ isOpen, onClose, onCardAction, 
     );
 };
 
-export default ModalcreditCard;
+export default ModalEarning;
