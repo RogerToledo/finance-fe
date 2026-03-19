@@ -134,7 +134,7 @@ function PaymentType() {
                                         {message.name}
                                     </td>
                                     <td className="px-10 py-4">
-                                        {message.spot_installment === 0 ? "À vista" : message.spot_installment === 1 ? "Parcelado" : "Ambos"}
+                                        {message.spot_payment === 0 ? "À vista" : message.spot_payment === 1 ? "Parcelado" : "Ambos"}
                                     </td>
                                     <td className="px-6 py-2 text-right">
                                         <button 

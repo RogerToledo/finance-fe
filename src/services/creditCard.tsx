@@ -28,7 +28,7 @@ export const createCreditCard = async (
     due_date: number
 ) => {
     const response = await instance.post('/v1/creditCards', {
-        id_person: owner,
+        owner_id: owner,
         final_card_num: final_card_num,
         type: type,
         invoice_closing_day: invoice_closing_day,
@@ -48,7 +48,7 @@ export const updateCreditCard = async (
 ) => {
     const response = await instance.put(`/v1/creditCards`, {
         id: id,
-        id_person: owner,
+        owner_id: owner,
         final_card_num: final_card_num,
         type: type,
         invoice_closing_day: invoice_closing_day,

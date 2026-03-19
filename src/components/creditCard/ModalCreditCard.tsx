@@ -58,6 +58,7 @@ const ModalcreditCard: React.FC<ModalProps> = ({ isOpen, onClose, onCardAction, 
                         setFinalCardNum("");
                         setType("");
                         setInvoiceCloseDay(0);
+                        setDueDate(0);
                     }
                 } catch (error) {
                     console.error("Error fetching card owners", error);

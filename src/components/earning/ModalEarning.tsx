@@ -106,7 +106,7 @@ const ModalEarning: React.FC<ModalProps> = ({ isOpen, onClose, onCardAction, isU
                 onClose();
             }, 3000);  
         } catch (err) {
-            console.error("Error creating credit card", err);
+            console.error("Error creating earning", err);
 
             if (axios.isAxiosError(err)) {
                 const apiMessage = err.response?.data?.message;

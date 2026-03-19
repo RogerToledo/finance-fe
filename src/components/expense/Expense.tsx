@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getExpensesActive, deleteExpense, payExpense, ExpensesResponse} from "@/services/expense";
+import { getExpensesActive, deleteExpense, reCreateExpense, payExpense, ExpensesResponse} from "@/services/expense";
 import ModalExpense from "./ModalExpense";
 import ModalPayExpense from "./ModalPayExpense";
 import axios from "axios";
@@ -90,6 +90,24 @@ function Expense() {
         openModal();
     }
 
+    const handleRecreateRecurring = async () => {
+        try {
+            await reCreateExpense();
+            await fetchData();
+
+            setSuccess("Despesas recorrentes recriadas!");
+            await fetchData();
+            setTimeout(() => setSuccess(null), 3000);
+        } catch (err) {
+            if (axios.isAxiosError(err)) {
+                const apiMessage = err.response?.data?.message;
+                setError(apiMessage || "Ocorreu um erro inesperado.");
+            } else {
+                setError("Ocorreu um erro inesperado.");
+            }
+        }
+    }
+
     const handleOpenNew = () => {
         setExpenseId("");
         setIsUpdate(false);
@@ -107,6 +125,13 @@ function Expense() {
                     onClick={handleOpenNew}
                 >
                     Novo
+                </button> 
+                <button 
+                    type="button" 
+                    className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 ml-10 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
+                    onClick={handleRecreateRecurring}
+                >
+                    Recriar Recorrente
                 </button> 
                 <h1 className="text-2xl ml-10 mt-5 mr-10 font-semibold text-gray-900 dark:text-white text-center flex-1 pr-20">Despesa</h1> 
             </div>

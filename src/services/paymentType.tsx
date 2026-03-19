@@ -3,7 +3,7 @@ import instance from "./config";
 export interface PaymentType {
     id: string;
     name: string;
-    spot_installment: number;
+    spot_payment: number;
 }
 
 export interface PaymentTypeResponse {
@@ -16,20 +16,20 @@ export interface PaymentTypesResponse {
     statusCode: number;
 }
 
-export const createPaymentType = async (name: string, spotInstallment: number) => {
+export const createPaymentType = async (name: string, spotPayment: number) => {
     const response = await instance.post('/v1/paymentTypes', {
         name: name,
-        spot_installment: spotInstallment,
+        spot_payment: spotPayment,
     });
 
     return response.data;
 }
 
-export const updatePaymentType = async (id: string, name: string, spotInstallment: number) => {
+export const updatePaymentType = async (id: string, name: string, spotPayment: number) => {
     const response = await instance.put(`/v1/paymentTypes`, {
         id: id,
         name: name,
-        spot_installment: spotInstallment
+        spot_payment: spotPayment
     });
 
     return response.data;

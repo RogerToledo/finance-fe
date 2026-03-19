@@ -33,7 +33,7 @@ const ModalPaymentType: React.FC<ModalProps> = ({ isOpen, onClose, onPaymentType
 
                         if (paymentTypeData) {
                             setPaymentTypeName(paymentTypeData.name);
-                            setPaymentTypeSpotInstallment(paymentTypeData.spot_installment);
+                            setPaymentTypeSpotInstallment(paymentTypeData.spot_payment);
                         }
                         
                         

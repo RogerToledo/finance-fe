@@ -8,10 +8,10 @@ export interface Purchase {
     installment_number: number,
     place: string,
     paid: boolean,
-    id_payment_type: string,
-    id_credit_card: string,
-    id_purchase_type: string,
-    id_person: string,
+    payment_type_id: string,
+    credit_card_id: string,
+    purchase_type_id: string,
+    person_id: string,
     payment_type: string,
     credit_card: string,
     purchase_type: string,
@@ -35,10 +35,10 @@ export const createPurchase = async (
     installment_number: number,
     place: string,
     paid: boolean,
-    id_payment_type: string,
-    id_credit_card: string,
-    id_purchase_type: string,
-    id_person: string
+    payment_type_id: string,
+    credit_card_id: string,
+    purchase_type_id: string,
+    person_id: string
 ) => {
     const response = await instance.post('/v1/purchases', {
         description: description,
@@ -47,10 +47,10 @@ export const createPurchase = async (
         installment_number: installment_number,
         place: place,
         paid: paid,
-        id_payment_type: id_payment_type,
-        id_credit_card: id_credit_card,
-        id_purchase_type: id_purchase_type,
-        id_person: id_person
+        payment_type_id: payment_type_id,
+        credit_card_id: credit_card_id,
+        purchase_type_id: purchase_type_id,
+        person_id: person_id
     });
 
     return response.data;
@@ -64,10 +64,10 @@ export const updatePurchase = async (
     installment_number: number,
     place: string,
     paid: boolean,
-    id_payment_type: string,
-    id_credit_card: string,
-    id_purchase_type: string,
-    id_person: string
+    payment_type_id: string,
+    credit_card_id: string,
+    purchase_type_id: string,
+    person_id: string
 ) => {
     const response = await instance.put(`/v1/purchases`, {
         id: id,
@@ -77,10 +77,10 @@ export const updatePurchase = async (
         installment_number: installment_number,
         place: place,
         paid: paid,
-        id_payment_type: id_payment_type,
-        id_credit_card: id_credit_card,
-        id_purchase_type: id_purchase_type,
-        id_person: id_person
+        payment_type_id: payment_type_id,
+        credit_card_id: credit_card_id,
+        purchase_type_id: purchase_type_id,
+        person_id: person_id
     });
 
     return response.data;

@@ -84,10 +84,10 @@ const ModalPurchaseType: React.FC<ModalProps> = ({ isOpen, onClose, onPurchaseAc
                         installment_number: data.installment_number || 0,
                         place: data.place || '',
                         paid: data.paid || false,
-                        payment_type: data.id_payment_type || '',
-                        credit_card: data.id_credit_card || '',
-                        purchase_type: data.id_purchase_type || '',
-                        person: data.id_person || ''
+                        payment_type: data.payment_type_id || '',
+                        credit_card: data.credit_card_id || '',
+                        purchase_type: data.purchase_type_id || '',
+                        person: data.person_id || ''
                     });
                     console.log("DEBUG - Dados da compra carregados:", data);
                 } catch (err) {
@@ -159,6 +159,7 @@ const ModalPurchaseType: React.FC<ModalProps> = ({ isOpen, onClose, onPurchaseAc
             const amountFloat = typeof formData.amount === 'string' 
                 ? parseFloat(formData.amount.replace(',', '.')) 
                 : formData.amount;
+
             if (isUpdate && purchaseId) {
                 await updatePurchase(
                     purchaseId,
@@ -173,7 +174,6 @@ const ModalPurchaseType: React.FC<ModalProps> = ({ isOpen, onClose, onPurchaseAc
                     formData.purchase_type,
                     formData.person
                 );
-
                 setSuccess("Compra atualizada com sucesso!");
             } else {
                 const paidCorrected = formData.credit_card !== "";
@@ -190,7 +190,6 @@ const ModalPurchaseType: React.FC<ModalProps> = ({ isOpen, onClose, onPurchaseAc
                     formData.purchase_type,
                     formData.person
                 );
-
                 setSuccess("Compra cadastrada com sucesso!");
             }
             onPurchaseAction();
